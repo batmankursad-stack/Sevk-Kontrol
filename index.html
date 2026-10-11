@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Centriplus Sevk Kontrol</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Sevk Kontrol">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+  :root {
+    --bg:#f2f3f5; --card:#ffffff; --text:#2b2f36; --muted:#6b7280; --line:#dfe2e7;
+    --accent:#e8612c; --accent-soft:rgba(232,97,44,.10);
+    --ok:#15803d; --ok-soft:rgba(21,128,61,.12);
+    --bad:#c62828; --bad-soft:rgba(198,40,40,.12);
+    --warn:#b45309; --warn-soft:rgba(180,83,9,.12);
+    --na:#6b7280; --na-soft:rgba(107,114,128,.14);
+    --input:#f7f8fa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#121418; --card:#1c1f25; --text:#eceef2; --muted:#9aa1ad; --line:#2f343d; --input:#16191e; }
+  }
+  :root[data-theme="dark"] { --bg:#121418; --card:#1c1f25; --text:#eceef2; --muted:#9aa1ad; --line:#2f343d; --input:#16191e; }
+
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; font-size:15px; }
+  button, input, textarea { font:inherit; }
+  [hidden] { display:none !important; }
+
+  /* ---------- üst bar ---------- */
+  .top { position:sticky; top:0; z-index:20; background:#fff; border-bottom:3px solid var(--accent);
+         padding:calc(env(safe-area-inset-top) + 10px) 16px 10px; display:flex; align-items:center; gap:12px; }
+  .top img { height:30px; width:auto; }
+  .top .t { margin-left:auto; text-align:right; line-height:1.2; }
+  .top .t b { display:block; font-size:14px; color:#2b2f36; }
+  .top .t span { font-size:12px; color:#6b7280; }
+
+  main { max-width:760px; margin:0 auto; padding:16px 16px calc(96px + env(safe-area-inset-bottom)); }
+
+  /* ---------- ana ekran ---------- */
+  .hello { margin:6px 2px 16px; }
+  .hello h1 { font-size:22px; margin:0 0 4px; }
+  .hello p { margin:0; color:var(--muted); font-size:14px; }
+  .resume { display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:14px 16px; margin-bottom:18px; border-radius:14px;
+            border:1.5px solid var(--accent); background:var(--accent-soft); color:var(--text); cursor:pointer; }
+  .resume b { display:block; color:var(--accent); font-size:13px; text-transform:uppercase; letter-spacing:.05em; }
+  .resume span { font-size:14px; }
+  .resume .arr { margin-left:auto; font-size:22px; color:var(--accent); }
+  .tiles { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .tile { display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding:16px; border-radius:16px; border:1px solid var(--line);
+          background:var(--card); color:var(--text); cursor:pointer; text-align:left; min-height:150px; }
+  .tile:active { transform:scale(.98); }
+  .tile .ic { width:44px; height:44px; border-radius:12px; background:var(--accent-soft); color:var(--accent); display:grid; place-items:center; }
+  .tile .ic svg { width:26px; height:26px; }
+  .tile b { font-size:16px; letter-spacing:.02em; }
+  .tile small { color:var(--muted); font-size:12.5px; line-height:1.35; }
+
+  /* ---------- kartlar ---------- */
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px; }
+  .card h2 { font-size:13px; letter-spacing:.06em; text-transform:uppercase; margin:0 0 12px; color:var(--accent); display:flex; align-items:center; gap:8px; }
+  .card h2 .step { display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--accent); color:#fff; font-size:12px; letter-spacing:0; }
+  .card h2 .right { margin-left:auto; color:var(--muted); text-transform:none; letter-spacing:0; font-weight:600; }
+
+  .typebar { display:flex; align-items:center; gap:10px; margin:0 2px 14px; }
+  .typebar b { font-size:18px; }
+  .typebar small { display:block; color:var(--muted); font-size:12.5px; }
+  .typebar button { margin-left:auto; }
+
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width:560px) { .grid { grid-template-columns:1fr; } }
+  label.f { display:flex; flex-direction:column; gap:5px; font-size:12px; font-weight:600; color:var(--muted); }
+  input[type=text], input[type=date], textarea {
+    color:var(--text); background:var(--input); border:1px solid var(--line); border-radius:10px; padding:11px 12px; width:100%; font-size:16px;
+  }
+  input:focus, textarea:focus { outline:2px solid var(--accent); outline-offset:-1px; }
+  textarea { min-height:70px; resize:vertical; }
+  details.more { margin-top:12px; }
+  details.more summary { font-size:13px; color:var(--muted); cursor:pointer; }
+  details.more .grid { margin-top:10px; }
+
+  .seg { display:flex; gap:8px; }
+  .seg button { flex:1; padding:11px 6px; border-radius:10px; border:1.5px solid var(--line); background:var(--input); color:var(--text); font-weight:600; cursor:pointer; }
+  .seg button[aria-pressed="true"] { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+  .seg button[data-k="onay"][aria-pressed="true"]  { border-color:var(--ok);   background:var(--ok-soft);   color:var(--ok); }
+  .seg button[data-k="sartli"][aria-pressed="true"]{ border-color:var(--warn); background:var(--warn-soft); color:var(--warn); }
+  .seg button[data-k="red"][aria-pressed="true"]   { border-color:var(--bad);  background:var(--bad-soft);  color:var(--bad); }
+  .sub { font-size:12px; font-weight:600; color:var(--muted); margin:14px 0 6px; }
+
+  /* ---------- kontrol maddeleri ---------- */
+  .progress { height:6px; border-radius:6px; background:var(--line); overflow:hidden; margin:-4px 0 14px; }
+  .progress i { display:block; height:100%; width:0; background:var(--accent); transition:width .25s; }
+  .grp { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin:18px 0 4px; }
+  .grp:first-child { margin-top:0; }
+  .item { border-top:1px solid var(--line); padding:14px 0; }
+  .grp + .item { border-top:none; padding-top:8px; }
+  .item .name { font-weight:600; margin-bottom:10px; display:flex; gap:10px; line-height:1.35; }
+  .item .no { flex:none; width:24px; height:24px; border-radius:7px; background:var(--na-soft); color:var(--muted); display:grid; place-items:center; font-size:12px; font-weight:700; }
+  .item[data-v="ok"] .no { background:var(--ok); color:#fff; }
+  .item[data-v="bad"] .no { background:var(--bad); color:#fff; }
+  .item[data-v="na"] .no { background:var(--na); color:#fff; }
+  .res { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .res button { padding:11px 4px; border-radius:10px; border:1.5px solid var(--line); background:var(--input); color:var(--text); font-weight:600; font-size:13.5px; cursor:pointer; }
+  .res button[data-v="ok"][aria-pressed="true"]  { border-color:var(--ok);  background:var(--ok-soft);  color:var(--ok); }
+  .res button[data-v="bad"][aria-pressed="true"] { border-color:var(--bad); background:var(--bad-soft); color:var(--bad); }
+  .res button[data-v="na"][aria-pressed="true"]  { border-color:var(--na);  background:var(--na-soft);  color:var(--text); }
+  .tools { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:999px; border:1px solid var(--line); background:transparent; color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; }
+  .chip svg { width:16px; height:16px; }
+  .chip.on { color:var(--accent); border-color:var(--accent); }
+  .chip .n { background:var(--accent); color:#fff; border-radius:999px; padding:0 6px; font-size:11px; }
+  .item textarea { margin-top:8px; min-height:48px; }
+
+  /* ---------- fotoğraflar ---------- */
+  .thumbs { display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:6px; margin-top:8px; }
+  .thumbs:empty { display:none; }
+  .thumb { position:relative; aspect-ratio:1; border-radius:9px; overflow:hidden; border:1px solid var(--line); }
+  .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .thumb button { position:absolute; top:4px; right:4px; width:26px; height:26px; border-radius:50%; border:none; background:rgba(0,0,0,.6); color:#fff; font-size:15px; line-height:1; cursor:pointer; }
+  .addrow { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .photos-full .addphoto, .photos-full .chip:has(input[data-photo]) { opacity:.4; pointer-events:none; }
+  .addphoto { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:12px; border:1.5px dashed var(--accent); color:var(--accent); font-weight:700; cursor:pointer; }
+  .hint { font-size:12px; color:var(--muted); margin-top:8px; }
+
+  /* ---------- alt bar ---------- */
+  .bar { position:fixed; left:0; right:0; bottom:0; z-index:20; background:var(--card); border-top:1px solid var(--line);
+         padding:10px 16px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:10px; justify-content:center; }
+  .bar > * { max-width:380px; }
+  .btn { flex:1; border:none; border-radius:12px; padding:14px 16px; font-weight:700; font-size:15px; cursor:pointer; background:var(--accent); color:#fff; }
+  .btn.sec { background:transparent; color:var(--text); border:1.5px solid var(--line); flex:0 1 auto; }
+  .btn.small { padding:8px 12px; font-size:13px; flex:none; }
+  .toast { position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#2b2f36; color:#fff; padding:9px 14px; border-radius:10px; font-size:13px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:30; white-space:nowrap; }
+  .toast.show { opacity:1; }
+
+  /* ================= RAPOR (A4) ================= */
+  .paper { background:#fff; color:#1f2328; width:760px; margin:0 auto; padding:22px; border-radius:6px; box-shadow:0 2px 14px rgba(0,0,0,.12);
+           font-size:11.5px; position:relative; overflow:hidden; z-index:0; }
+  .paper .wm { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:-1; pointer-events:none; }
+  .paper .wm img { width:80%; opacity:.06; }
+  .r-head { display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center; padding-bottom:10px; border-bottom:3px solid #e8612c; }
+  .r-head img { height:34px; }
+  .r-head .rt { text-align:center; }
+  .r-head .rt b { display:block; font-size:15px; letter-spacing:.04em; }
+  .r-head .rt span { font-size:10.5px; color:#555; letter-spacing:.06em; }
+  .r-doc { border-collapse:collapse; font-size:10px; }
+  .r-doc td { border:1px solid #c9ccd1; padding:3px 7px; white-space:nowrap; }
+  .r-doc td:first-child { background:#f4f5f7; font-weight:600; }
+  .r-sec { margin-top:14px; font-size:11px; font-weight:700; letter-spacing:.08em; color:#e8612c; text-transform:uppercase; margin-bottom:5px; }
+  .r-tbl { width:100%; border-collapse:collapse; }
+  .r-tbl th, .r-tbl td { border:1px solid #c9ccd1; padding:6px 8px; vertical-align:top; text-align:left; }
+  .r-tbl th { background:#f4f5f7; font-weight:600; }
+  .r-tbl thead th { background:#2b2f36; color:#fff; border-color:#2b2f36; }
+  .r-info th { width:18%; }
+  .r-info td { width:32%; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-weight:700; font-size:9.5px; letter-spacing:.04em; white-space:nowrap; }
+  .pill.ok { background:#e3f3e8; color:#15803d; }
+  .pill.bad { background:#fbe5e5; color:#c62828; }
+  .pill.na { background:#eceef1; color:#555; }
+  .r-sum { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  .r-decision { border:1.5px solid #c9ccd1; border-left:5px solid #9aa1ad; padding:10px 12px; border-radius:4px; min-height:44px; }
+  .r-decision.onay { border-left-color:#15803d; }
+  .r-decision.sartli { border-left-color:#b45309; }
+  .r-decision.red { border-left-color:#c62828; }
+  .pill.onay { background:#e3f3e8; color:#15803d; }
+  .pill.sartli { background:#fdf0e1; color:#b45309; }
+  .pill.red { background:#fbe5e5; color:#c62828; }
+  .r-sign { display:grid; grid-template-columns:1fr 1fr 1fr; border:1px solid #c9ccd1; }
+  .r-sign > div { padding:8px 10px; border-left:1px solid #c9ccd1; min-height:62px; }
+  .r-sign > div:first-child { border-left:none; }
+  .r-sign small { display:block; color:#666; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
+  .r-photos { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .r-photos figure { margin:0; border:1px solid #c9ccd1; border-radius:4px; overflow:hidden; break-inside:avoid; page-break-inside:avoid; }
+  .r-photos img { width:100%; height:230px; object-fit:contain; display:block; background:#f4f5f7; }
+  .r-photos figcaption { padding:5px 8px; font-size:10px; border-top:1px solid #c9ccd1; }
+  .r-photos figcaption b { color:#e8612c; }
+  .r-foot { margin-top:16px; padding-top:6px; border-top:1px solid #c9ccd1; display:flex; justify-content:space-between; gap:10px; font-size:9.5px; color:#777; }
+
+  @media print {
+    body { background:#fff; }
+    .top, #homeView, #editView, .bar, .toast, .noprint { display:none !important; }
+    #reportView { display:block !important; }
+    main { padding:0; max-width:none; }
+    .paper { box-shadow:none; border-radius:0; padding:0; width:auto; zoom:1 !important; }
+    @page { size:A4; margin:11mm; }
+    .r-tbl tr, .r-sign, .r-decision { break-inside:avoid; page-break-inside:avoid; }
+    * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <img src="logo.png" alt="Centriplus">
+  <div class="t"><b>Sevk Kontrol</b><span id="topSub">Final kontrol raporu</span></div>
+</header>
+
+<main>
+
+<!-- ================= ANA EKRAN ================= -->
+<div id="homeView" hidden>
+  <div class="hello">
+    <h1>Ne kontrol edeceksin?</h1>
+    <p>Kontrol tipini seç, rapor otomatik hazırlansın.</p>
+  </div>
+  <button type="button" class="resume" id="resumeBtn" hidden>
+    <div><b>Devam eden rapor</b><span id="resumeTxt"></span></div><span class="arr">›</span>
+  </button>
+  <div class="tiles" id="tiles"></div>
+</div>
+
+<!-- ================= DÜZENLEME ================= -->
+<div id="editView" hidden>
+
+  <div class="typebar">
+    <div><b id="typeName"></b><small id="typeDesc"></small></div>
+    <button type="button" class="btn sec small" id="homeBtn">Tip Değiştir</button>
+  </div>
+
+  <section class="card">
+    <h2><span class="step">1</span>Makine Bilgileri</h2>
+    <div class="grid" id="fields"></div>
+    <div id="testWrap">
+      <div class="sub">Test Adımı</div>
+      <div class="seg" id="testSeg">
+        <button type="button" data-test="kuru">Kuru Test</button>
+        <button type="button" data-test="sulu">Sulu Test</button>
+      </div>
+    </div>
+    <details class="more">
+      <summary>Doküman bilgileri</summary>
+      <div class="grid">
+        <label class="f">Doküman No<input type="text" data-f="docNo"></label>
+        <label class="f">Revizyon No / Tarihi<input type="text" data-f="rev"></label>
+      </div>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">2</span>Kontrol Maddeleri <span class="right" id="count"></span></h2>
+    <div class="progress"><i id="bar"></i></div>
+    <div id="items"></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">3</span>Genel Görseller <span class="right" id="photoCount"></span></h2>
+    <div class="addrow">
+      <label class="addphoto">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        Kamera
+        <input type="file" accept="image/*" capture="environment" hidden data-photo="">
+      </label>
+      <label class="addphoto">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
+        Galeri
+        <input type="file" accept="image/*" multiple hidden data-photo="">
+      </label>
+    </div>
+    <div class="thumbs" data-thumbs=""></div>
+    <div class="hint">Bir rapora en fazla 10 fotoğraf eklenebilir (maddelerdekiler dahil). Maddeye özel fotoğraflar raporda o maddenin adıyla görünür.</div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">4</span>Sevk Kararı</h2>
+    <div class="seg" id="kararSeg">
+      <button type="button" data-k="onay">Onay</button>
+      <button type="button" data-k="sartli">Şartlı Kabul</button>
+      <button type="button" data-k="red">Ret</button>
+    </div>
+    <label class="f" style="margin-top:12px">Karar metni<textarea data-f="sevkNot" style="min-height:110px"></textarea></label>
+    <div class="hint">Karar metni raporda olduğu gibi yer alır. Seçtiğin karar raporda etiket olarak görünür.</div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">5</span>İmzalar</h2>
+    <div class="grid">
+      <label class="f">Testi Raporlayan<input type="text" data-f="raporlayan"></label>
+      <label class="f">Testi Onaylayan<input type="text" data-f="onaylayan"></label>
+      <label class="f">Tarih<input type="date" data-f="tarih"></label>
+    </div>
+  </section>
+
+  <div class="bar">
+    <button type="button" class="btn sec" id="newBtn">Yeni Rapor</button>
+    <button type="button" class="btn" id="previewBtn">Raporu Oluştur</button>
+  </div>
+</div>
+
+<!-- ================= RAPOR ================= -->
+<div id="reportView" hidden>
+  <div class="paper" id="paper"></div>
+  <div class="bar noprint">
+    <button type="button" class="btn sec" id="backBtn">← Düzenle</button>
+    <button type="button" class="btn" id="printBtn">PDF Kaydet / Paylaş</button>
+  </div>
+</div>
+
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================================================================
+   ŞABLONLAR — her kontrol tipi burada tanımlı.
+   Madde eklemek / çıkarmak için ilgili "items" listesini düzenleyin.
+   res: uygun | uygunDegil | kusur | evet  (sonuç düğmelerinin adları)
+================================================================== */
+const RESSETS = {
+  uygun:      { ok: "Uygun",         bad: "Uygunsuz" },
+  uygunDegil: { ok: "Uygun",         bad: "Uygun Değil" },
+  kusur:      { ok: "Kusurlu Değil", bad: "Kusurlu" },
+  evet:       { ok: "Evet",          bad: "Hayır" }
+};
+const NA = "Mevcut Değil";
+
+const FIELDS = {
+  marka:   { l: "Marka ve Model" },
+  tipAd:   { l: "Makine Tipi" },
+  parca:   { l: "Parça Adı" },
+  seri:    { l: "Seri Numarası" },
+  servis:  { l: "Servis / Proje No",    num: true },
+  musteri: { l: "Müşteri" },
+  sektor:  { l: "Sektör" }
+};
+
+const ICONS = {
+  dekantor:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="8" width="18" height="7" rx="3.5"/><path d="M6 15v4M18 15v4M8 11.5h8"/></svg>',
+  separator: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 4h10l2 6H5z"/><path d="M5 10c0 4 3 6 7 6s7-2 7-6"/><path d="M12 16v4M8 20h8"/></svg>',
+  sanziman:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/><circle cx="12" cy="12" r="7"/></svg>',
+  yedek:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7M12 11v10"/></svg>'
+};
+
+const TEMPLATES = {
+  dekantor: {
+    ad: "Dekantör", tip: "DEKANTÖR", title: "DEKANTÖR TEST KONTROL RAPORU",
+    docNo: "KG-FR-20", rev: "4.20.2026", testAdimi: true, wm: "dekanter.jpg",
+    fields: ["marka", "seri", "servis", "musteri", "sektor"],
+    groups: [{ res: "uygun", items: [
+      { id: "sensor",   label: "Sıcaklık, titreşim sensörü ve devir sensörü kontrolü (kapalı dekantörde sadece devir sensörü)" },
+      { id: "rulman",   label: "Rulman yataklarına gres basılma kontrolü" },
+      { id: "civata",   label: "Cıvata tork kontrolü" },
+      { id: "montaj",   label: "Montaj kontrolü" },
+      { id: "etiket",   label: "Etiket kontrolü (motor etiketleri, uyarı etiketleri, model etiketi vb.) — motor etiket yönleri için imalat formuna bakınız" },
+      { id: "kayis",    label: "Kayış gerginlik ve kasnağa uygunluk kontrolü" },
+      { id: "sut",      label: "Katı ve sıvı çıkış şut bağlantılarının kontrolü" },
+      { id: "motorYon", label: "Motor dönüş yönü ve motor dönüş yönü etiketi kontrolü" },
+      { id: "yaglama",  label: "Yağlama sistemi kontrolü" }
+    ]}]
+  },
+
+  separator: {
+    ad: "Separatör", tip: "SEPARATÖR", title: "SEPARATÖR ÇALIŞTIRMA TEST FORMU", sub: "SEPARATOR FINAL MACHINE CONTROL TEST REPORT",
+    docNo: "KG-FR-17", rev: "0 / 4.20.2026", testAdimi: false,
+    fields: ["marka", "seri", "servis", "musteri", "sektor"],
+    groups: [
+      { title: "Ön Kontroller", res: "evet", items: [
+        { id: "pano",     label: "Pano kontrolü yapıldı" },
+        { id: "hasar",    label: "Hasar tespit raporu tutuldu" },
+        { id: "tespit",   label: "Tespit sonrası gerekli işlemler yapıldı" },
+        { id: "yedekKnt", label: "Yedek parça kontrolü yapıldı" },
+        { id: "parcaTmz", label: "Tüm parçaların temizliği yapıldı" },
+        { id: "atolye",   label: "Test öncesi atölye raporu tutuldu" }
+      ]},
+      { title: "Kontrol Kriterleri", res: "uygunDegil", items: [
+        { id: "sanzYag",   label: "Separatör şanzıman yağı" },
+        { id: "sasi",      label: "Şasi ve şasi bağlantıları" },
+        { id: "baglanti",  label: "Bağlantı elemanları (cıvata, somun vb.)" },
+        { id: "altTambur", label: "Alt tambur parçası" },
+        { id: "ustTambur", label: "Üst tambur kapak" },
+        { id: "piston",    label: "Sliding piston" },
+        { id: "tabak",     label: "Tabaklar ve ana tabak" },
+        { id: "fan",       label: "Fan grubu parçaları" },
+        { id: "govde",     label: "Separatör gövde kontrolü" },
+        { id: "sanzGrup",  label: "Şanzıman grubu parçaları" },
+        { id: "elMotor",   label: "Elektrik motoru kontrolü" },
+        { id: "etiket",    label: "Etiketler" },
+        { id: "hat",       label: "Giriş - çıkış hat kontrolü" },
+        { id: "boya",      label: "Boya kontrolü" },
+        { id: "motorYon",  label: "Motor dönüş yönü" },
+        { id: "montaj",    label: "Montaj elemanları bağlantı kontrolü" },
+        { id: "yardimci",  label: "Yardımcı ekipman kontrolü" },
+        { id: "temizlik",  label: "Temizlik kontrolü" }
+      ]}
+    ]
+  },
+
+  sanziman: {
+    ad: "Şanzıman", tip: "ŞANZIMAN", title: "ŞANZIMAN KONTROL RAPORU",
+    docNo: "KG-FR-18", rev: "00 / 4.20.2026", testAdimi: true,
+    fields: ["marka", "seri", "servis", "musteri", "sektor"],
+    groups: [{ res: "uygun", items: [
+      { id: "yag",     label: "Yağ kontrolü" },
+      { id: "civata",  label: "Cıvata tork kontrolü" },
+      { id: "montaj",  label: "Montaj kontrolü" },
+      { id: "etiket",  label: "Etiket kontrolü (motor etiketleri, uyarı etiketleri, model etiketi vb.) — motor etiket yönleri için imalat formuna bakınız" },
+      { id: "gorsel",  label: "Görsel kontrol" },
+      { id: "yaglama", label: "Yağlama sistemi kontrolü" }
+    ]}]
+  },
+
+  yedek: {
+    ad: "Yedek Parça", tip: null, title: "YEDEK PARÇA SEVK KONTROL RAPORU",
+    docNo: "", rev: "", testAdimi: false, adim: "SEVK KONTROL",
+    fields: ["parca", "marka", "tipAd", "seri", "servis", "musteri"],
+    groups: [{ res: "kusur", items: [
+      { id: "yag",      label: "Yağ kontrolü" },
+      { id: "gorsel",   label: "Görsel kontrol" },
+      { id: "civata",   label: "Cıvata kontrolü" },
+      { id: "bom",      label: "Parça BOM list kontrolü" },
+      { id: "montaj",   label: "Montaj uygunluk kontrolü" },
+      { id: "kirik",    label: "Kırık / hasarlı parça kontrolü" },
+      { id: "temizlik", label: "Temizlik kontrolü" },
+      { id: "deneme",   label: "Parça denemeye uygunluk kontrolü" },
+      { id: "boya",     label: "Boya kontrolü" },
+      { id: "etiket",   label: "Etiket / kod kontrolü" }
+    ]}]
+  }
+};
+
+const KARAR = { onay: "ONAY", sartli: "ŞARTLI KABUL", red: "RET" };
+const MAX_PHOTOS = 10;
+const SKEY = "centriplus-kontrol:v3";
+
+/* ---------- yardımcılar ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const nl2br = (s) => esc(s).replace(/\n/g, "<br>");
+const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const trDate = (iso) => iso ? iso.split("-").reverse().join(".") : "";
+let toastT;
+const toast = (t) => { const el = $("#toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), 2200); };
+
+const ICON_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+const ICON_GAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>';
+const ICON_NOTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h14v16H5z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>';
+
+const T = () => TEMPLATES[S.type];
+const allItems = (t = T()) => t.groups.flatMap(g => g.items.map(it => ({ ...it, res: g.res })));
+const resLabel = (set, v) => v === "na" ? NA : RESSETS[set][v];
+
+/* ---------- durum ---------- */
+function blankState(type) {
+  const t = TEMPLATES[type];
+  return { type, test: "", f: { docNo: t.docNo, rev: t.rev, tarih: today() }, results: {}, notes: {}, karar: "" };
+}
+let S;
+try { S = JSON.parse(localStorage.getItem(SKEY) || "null"); } catch (e) { S = null; }
+if (S && !TEMPLATES[S.type]) S = null;
+
+let saveT;
+function save() {
+  clearTimeout(saveT);
+  saveT = setTimeout(() => { try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch (e) {} }, 250);
+}
+
+/* ---------- fotoğraf deposu (IndexedDB) ---------- */
+const DB = (() => {
+  let dbp;
+  const open = () => dbp ||= new Promise((res, rej) => {
+    const r = indexedDB.open("centriplus-kontrol", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("photos", { keyPath: "id" });
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+  const tx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => {
+    const t = db.transaction("photos", mode); const req = fn(t.objectStore("photos"));
+    t.oncomplete = () => res(req && req.result); t.onerror = () => rej(t.error);
+  }); };
+  return {
+    all: () => tx("readonly", st => st.getAll()),
+    put: (p) => tx("readwrite", st => st.put(p)),
+    del: (id) => tx("readwrite", st => st.delete(id)),
+    clear: () => tx("readwrite", st => st.clear())
+  };
+})();
+let photos = [];   // {id, item, src, ts}
+
+function compress(file, max = 1600, q = 0.82) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL("image/jpeg", q));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("Görsel okunamadı")); };
+    img.src = url;
+  });
+}
+
+function hasData() {
+  if (!S) return false;
+  return Object.keys(S.results).length > 0 || photos.length > 0 || ["musteri", "seri", "servis", "marka", "parca"].some(k => S.f[k]);
+}
+
+/* ---------- ekranlar ---------- */
+function show(view) {
+  ["homeView", "editView", "reportView"].forEach(v => $("#" + v).hidden = v !== view);
+  $("#topSub").textContent = view === "homeView" || !S ? "Final kontrol raporu" : T().ad + " kontrolü";
+  window.scrollTo(0, 0);
+}
+
+function renderHome() {
+  $("#tiles").innerHTML = Object.entries(TEMPLATES).map(([k, t]) => {
+    const n = allItems(t).length;
+    const desc = `${n} madde${t.testAdimi ? " · kuru / sulu test" : ""}${t.groups.length > 1 ? " · ön kontroller" : ""}`;
+    return `<button type="button" class="tile" data-type="${k}"><span class="ic">${ICONS[k]}</span><b>${esc(t.ad)}</b><small>${desc}</small></button>`;
+  }).join("");
+  const draft = hasData();
+  $("#resumeBtn").hidden = !draft;
+  if (draft) {
+    const items = allItems();
+    const done = items.filter(it => S.results[it.id]).length;
+    $("#resumeTxt").textContent = [T().ad, S.f.musteri, S.f.servis].filter(Boolean).join(" · ") + `  (${done}/${items.length})`;
+  }
+}
+
+function renderEdit() {
+  const t = T();
+  $("#typeName").textContent = t.ad + " Kontrolü";
+  $("#typeDesc").textContent = t.title;
+  $("#fields").innerHTML = t.fields.map(k => {
+    const d = FIELDS[k];
+    return `<label class="f">${d.l}<input type="text" data-f="${k}" ${d.ph ? `placeholder="${esc(d.ph)}"` : ""} ${d.num ? 'inputmode="numeric"' : ""}></label>`;
+  }).join("");
+  $("#testWrap").hidden = !t.testAdimi;
+  $$("[data-f]").forEach(el => { el.value = S.f[el.dataset.f] ?? ""; });
+  renderSegs();
+  renderItems();
+}
+
+function renderSegs() {
+  $$("#testSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.test === S.test));
+  $$("#kararSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === S.karar));
+}
+
+function renderItems() {
+  let n = 0;
+  $("#items").innerHTML = T().groups.map(g => {
+    const head = g.title ? `<div class="grp">${esc(g.title)}</div>` : "";
+    return head + g.items.map(it => {
+      const v = S.results[it.id] || "";
+      const note = S.notes[it.id] || "";
+      return `
+      <div class="item" data-id="${it.id}" data-v="${v}">
+        <div class="name"><span class="no">${++n}</span><span>${esc(it.label)}</span></div>
+        <div class="res">${["ok", "bad", "na"].map(r => `<button type="button" data-v="${r}" aria-pressed="${v === r}">${resLabel(g.res, r)}</button>`).join("")}</div>
+        <div class="tools">
+          <button type="button" class="chip ${note ? "on" : ""}" data-act="note">${ICON_NOTE} Açıklama</button>
+          <label class="chip">${ICON_CAM} Kamera<input type="file" accept="image/*" capture="environment" hidden data-photo="${it.id}"></label>
+          <label class="chip">${ICON_GAL} Galeri<input type="file" accept="image/*" multiple hidden data-photo="${it.id}"></label>
+        </div>
+        <textarea data-note="${it.id}" placeholder="Açıklama" ${note ? "" : "hidden"}>${esc(note)}</textarea>
+        <div class="thumbs" data-thumbs="${it.id}"></div>
+      </div>`;
+    }).join("");
+  }).join("");
+  renderThumbs();
+  updateProgress();
+}
+
+function updateProgress() {
+  const items = allItems();
+  const done = items.filter(it => S.results[it.id]).length;
+  $("#count").textContent = `${done} / ${items.length}`;
+  $("#bar").style.width = (done / items.length * 100) + "%";
+}
+
+function renderThumbs() {
+  $$("[data-thumbs]").forEach(box => {
+    const key = box.dataset.thumbs;
+    box.innerHTML = photos.filter(p => p.item === key).map(p =>
+      `<div class="thumb"><img src="${p.src}" alt=""><button type="button" data-rm="${p.id}" aria-label="Kaldır">×</button></div>`
+    ).join("");
+  });
+  const full = photos.length >= MAX_PHOTOS;
+  document.body.classList.toggle("photos-full", full);
+  $$("input[data-photo]").forEach(inp => inp.disabled = full);
+  $("#photoCount").textContent = `${photos.length} / ${MAX_PHOTOS}`;
+}
+
+async function startNew(type) {
+  if (hasData() && !confirm("Devam eden rapor silinip yeni rapor başlatılsın mı?\nKaydetmediğin PDF varsa önce kaydet.")) return;
+  S = blankState(type); save();
+  photos = []; await DB.clear().catch(() => {});
+  renderEdit(); show("editView");
+}
+
+/* ---------- olaylar ---------- */
+$("#tiles").addEventListener("click", (e) => { const b = e.target.closest("[data-type]"); if (b) startNew(b.dataset.type); });
+$("#resumeBtn").addEventListener("click", () => { renderEdit(); show("editView"); });
+$("#homeBtn").addEventListener("click", () => { renderHome(); show("homeView"); });
+$("#newBtn").addEventListener("click", () => { renderHome(); show("homeView"); });
+
+document.addEventListener("input", (e) => {
+  const el = e.target;
+  if (el.dataset.f !== undefined) { S.f[el.dataset.f] = el.value; save(); }
+  else if (el.dataset.note !== undefined) {
+    S.notes[el.dataset.note] = el.value;
+    el.closest(".item").querySelector('[data-act="note"]').classList.toggle("on", !!el.value);
+    save();
+  }
+});
+
+// Tekrar dokununca seçim kalkar
+$("#testSeg").addEventListener("click", (e) => { const b = e.target.closest("[data-test]"); if (!b) return; S.test = S.test === b.dataset.test ? "" : b.dataset.test; save(); renderSegs(); });
+$("#kararSeg").addEventListener("click", (e) => { const b = e.target.closest("[data-k]"); if (!b) return; S.karar = S.karar === b.dataset.k ? "" : b.dataset.k; save(); renderSegs(); });
+
+$("#items").addEventListener("click", (e) => {
+  const item = e.target.closest(".item"); if (!item) return;
+  const id = item.dataset.id;
+  const rb = e.target.closest(".res button");
+  if (rb) {
+    const v = S.results[id] === rb.dataset.v ? "" : rb.dataset.v;   // tekrar dokununca seçim kalkar
+    if (v) S.results[id] = v; else delete S.results[id];
+    item.dataset.v = v;
+    $$(".res button", item).forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v));
+    if (v === "bad") $("textarea", item).hidden = false;           // olumsuzda açıklama alanını aç
+    updateProgress(); save(); return;
+  }
+  if (e.target.closest('[data-act="note"]')) {
+    const ta = $("textarea", item); ta.hidden = !ta.hidden; if (!ta.hidden) ta.focus();
+  }
+});
+
+document.addEventListener("change", async (e) => {
+  const inp = e.target;
+  if (inp.dataset.photo === undefined) return;
+  let files = [...inp.files]; inp.value = "";
+  if (!files.length) return;
+  const room = MAX_PHOTOS - photos.length;
+  if (room <= 0) { toast(`En fazla ${MAX_PHOTOS} fotoğraf eklenebilir`); return; }
+  const skipped = Math.max(0, files.length - room);
+  files = files.slice(0, room);
+  toast("Fotoğraflar işleniyor…");
+  let ok = 0;
+  for (const f of files) {
+    try {
+      const p = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), item: inp.dataset.photo, src: await compress(f), ts: Date.now() };
+      photos.push(p); ok++;
+      await DB.put(p).catch(() => {});
+    } catch (err) {}
+  }
+  renderThumbs();
+  if (skipped) alert(`${ok} fotoğraf eklendi. Sınır ${MAX_PHOTOS} olduğu için ${skipped} fotoğraf eklenmedi.`);
+  else toast(ok === files.length ? `${ok} fotoğraf eklendi` : `${ok}/${files.length} fotoğraf eklendi`);
+});
+
+document.addEventListener("click", async (e) => {
+  const rm = e.target.closest("[data-rm]"); if (!rm) return;
+  if (!confirm("Fotoğraf kaldırılsın mı?")) return;
+  photos = photos.filter(p => p.id !== rm.dataset.rm);
+  await DB.del(rm.dataset.rm).catch(() => {});
+  renderThumbs();
+});
+
+/* ---------- rapor ---------- */
+function model() { return (S.f.marka || "").split("/").pop().trim(); }
+
+function fileName() {
+  const t = T(), f = S.f;
+  const d = f.tarih ? f.tarih.slice(2).replace(/-/g, "") : "";
+  const parts = S.type === "yedek"
+    ? [d, f.musteri, f.parca, "SEVK KONTROL RAPORU", f.servis]
+    : [d, f.musteri, model(), S.type === "dekantor" ? "" : t.tip, "FİNAL KONTROL RAPORU", f.servis];
+  return parts.map(x => (x || "").trim()).filter(Boolean).join(" ").replace(/[\\/:*?"<>|]/g, "-");
+}
+
+function buildReport() {
+  const t = T(), f = S.f, items = allItems();
+  const pill = (set, v) => v ? `<span class="pill ${v}">${resLabel(set, v).toLocaleUpperCase("tr")}</span>` : "—";
+
+  // Makine bilgileri: alan çiftlerini 2 sütuna diz
+  const info = [["Marka ve Model", f.marka], ["Müşteri", f.musteri]];
+  info.push(["Makine Tipi", t.tip || f.tipAd], ["Servis / Proje No", f.servis]);
+  info.push(["Seri Numarası", f.seri]);
+  info.push(t.fields.includes("parca") ? ["Parça Adı", f.parca] : ["Sektör", f.sektor]);
+  const infoRows = [];
+  for (let i = 0; i < info.length; i += 2)
+    infoRows.push(`<tr><th>${info[i][0]}</th><td>${esc(info[i][1])}</td><th>${info[i + 1][0]}</th><td>${esc(info[i + 1][1])}</td></tr>`);
+  if (t.testAdimi) infoRows.push(`<tr><th>Test Adımı</th><td colspan="3">${S.test ? (S.test === "sulu" ? "Sulu" : "Kuru") + " Test Kontrolü" : ""}</td></tr>`);
+  if (t.adim) infoRows.push(`<tr><th>Kontrol Adımı</th><td colspan="3">${esc(t.adim)}</td></tr>`);
+
+  let n = 0;
+  const tables = t.groups.map(g => {
+    const rs = RESSETS[g.res];
+    const rows = g.items.map(it => `
+      <tr><td style="width:5%;text-align:center">${++n}</td><td>${esc(it.label)}</td>
+      <td style="width:17%;text-align:center">${pill(g.res, S.results[it.id])}</td><td style="width:28%">${nl2br(S.notes[it.id])}</td></tr>`).join("");
+    return `
+      <div class="r-sec">${esc(g.title || "Kontrol Sonuçları")}</div>
+      <table class="r-tbl">
+        <thead><tr><th style="text-align:center">No</th><th>Kontrol Edilecek Unsurlar</th><th style="text-align:center">${rs.ok} / ${rs.bad}</th><th>Açıklama</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }).join("");
+
+  const cnt = (v) => items.filter(it => S.results[it.id] === v).length;
+  const mainSet = t.groups[t.groups.length - 1].res;
+
+  // Fotoğraflar: madde sırasına göre, sonra genel
+  const order = [...items.map((it, i) => ({ key: it.id, cap: `Madde ${i + 1} · ${it.label}` })), { key: "", cap: "Genel görünüm" }];
+  let k = 0;
+  const figs = order.flatMap(o => photos.filter(p => p.item === o.key).map(p =>
+    `<figure><img src="${p.src}" alt=""><figcaption><b>Görsel ${++k}</b> · ${esc(o.cap)}</figcaption></figure>`));
+
+  $("#paper").innerHTML = `
+    ${t.wm ? `<div class="wm"><img src="${t.wm}" alt=""></div>` : ""}
+    <div class="r-head">
+      <img src="logo.png" alt="Centriplus">
+      <div class="rt"><b>${esc(t.title)}</b>${t.sub ? `<span>${esc(t.sub)}</span>` : ""}</div>
+      <table class="r-doc"><tr><td>Doküman No</td><td>${esc(f.docNo)}</td></tr><tr><td>Revizyon No / Tarihi</td><td>${esc(f.rev)}</td></tr></table>
+    </div>
+
+    <div class="r-sec">Makine Bilgileri</div>
+    <table class="r-tbl r-info">${infoRows.join("")}</table>
+
+    ${tables}
+    <div class="r-sum">
+      <span class="pill ok">${cnt("ok")} ${RESSETS[mainSet].ok.toLocaleUpperCase("tr")}</span>
+      <span class="pill bad">${cnt("bad")} ${RESSETS[mainSet].bad.toLocaleUpperCase("tr")}</span>
+      <span class="pill na">${cnt("na")} MEVCUT DEĞİL</span>
+    </div>
+
+    <div class="r-sec">Sevk Kararı</div>
+    <div class="r-decision ${S.karar}">
+      ${S.karar ? `<span class="pill ${S.karar}">${KARAR[S.karar]}</span>` : ""}
+      ${f.sevkNot ? `<div style="margin-top:${S.karar ? 6 : 0}px;font-weight:600">${nl2br(f.sevkNot)}</div>` : ""}
+    </div>
+
+    <div class="r-sec">İmzalar</div>
+    <div class="r-sign">
+      <div><small>Testi Raporlayan</small>${esc(f.raporlayan)}</div>
+      <div><small>Testi Onaylayan</small>${esc(f.onaylayan)}</div>
+      <div><small>Tarih</small>${trDate(f.tarih)}</div>
+    </div>
+
+    ${figs.length ? `<div class="r-sec" style="margin-top:18px">Görseller</div><div class="r-photos">${figs.join("")}</div>` : ""}
+
+    <div class="r-foot"><span>Centriplus${f.docNo ? " · " + esc(f.docNo) : ""}</span><span>${esc(fileName())}</span></div>`;
+}
+
+$("#previewBtn").addEventListener("click", () => {
+  const warn = [];
+  const missing = allItems().filter(it => !S.results[it.id]).length;
+  if (missing) warn.push(`${missing} madde işaretlenmedi.`);
+  if (!S.karar) warn.push("Sevk kararı seçilmedi.");
+  if (warn.length && !confirm(warn.join("\n") + "\nYine de rapor oluşturulsun mu?")) return;
+  buildReport();
+  show("reportView");
+  fitPaper();
+});
+
+// Önizlemede A4 sayfayı ekran genişliğine sığdır (PDF çıktısını etkilemez)
+function fitPaper() {
+  const p = $("#paper");
+  p.style.zoom = Math.min(1, (document.documentElement.clientWidth - 24) / 760);
+}
+window.addEventListener("resize", () => { if (!$("#reportView").hidden) fitPaper(); });
+
+$("#backBtn").addEventListener("click", () => show("editView"));
+
+$("#printBtn").addEventListener("click", () => {
+  const old = document.title;
+  document.title = fileName() || old;          // PDF dosya adı olarak kullanılır
+  const restore = () => { document.title = old; window.removeEventListener("afterprint", restore); };
+  window.addEventListener("afterprint", restore);
+  window.print();
+});
+
+/* ---------- başlat ---------- */
+DB.all().catch(() => []).then(list => {
+  photos = (list || []).sort((a, b) => a.ts - b.ts);
+  if (S && hasData()) { renderEdit(); show("editView"); }
+  else { renderHome(); show("homeView"); }
+});
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
