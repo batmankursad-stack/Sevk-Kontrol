@@ -44,7 +44,12 @@
   .hello { margin:6px 2px 16px; }
   .hello h1 { font-size:22px; margin:0 0 4px; }
   .hello p { margin:0; color:var(--muted); font-size:14px; }
-  .resume { display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:14px 16px; margin-bottom:18px; border-radius:14px;
+  .resumeRow { display:flex; gap:8px; margin-bottom:18px; }
+  .trash { flex:none; width:56px; border-radius:14px; border:1.5px solid var(--bad); background:var(--bad-soft); color:var(--bad); display:grid; place-items:center; cursor:pointer; }
+  .trash svg { width:22px; height:22px; }
+  .delbtn { width:100%; padding:13px; border-radius:12px; border:1.5px solid var(--bad); background:transparent; color:var(--bad); font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .delbtn svg { width:18px; height:18px; }
+  .resume { display:flex; align-items:center; gap:12px; flex:1; min-width:0; text-align:left; padding:14px 16px; border-radius:14px;
             border:1.5px solid var(--accent); background:var(--accent-soft); color:var(--text); cursor:pointer; }
   .resume b { display:block; color:var(--accent); font-size:13px; text-transform:uppercase; letter-spacing:.05em; }
   .resume span { font-size:14px; }
@@ -204,9 +209,14 @@
     <h1>Ne kontrol edeceksin?</h1>
     <p>Kontrol tipini seç, rapor otomatik hazırlansın.</p>
   </div>
-  <button type="button" class="resume" id="resumeBtn" hidden>
-    <div><b>Devam eden rapor</b><span id="resumeTxt"></span></div><span class="arr">›</span>
-  </button>
+  <div class="resumeRow" id="resumeRow" hidden>
+    <button type="button" class="resume" id="resumeBtn">
+      <div><b>Devam eden rapor</b><span id="resumeTxt"></span></div><span class="arr">›</span>
+    </button>
+    <button type="button" class="trash" data-del aria-label="Devam eden raporu sil">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>
+    </button>
+  </div>
   <div class="tiles" id="tiles"></div>
 </div>
 
@@ -280,6 +290,11 @@
       <label class="f">Tarih<input type="date" data-f="tarih"></label>
     </div>
   </section>
+
+  <button type="button" class="delbtn" data-del>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>
+    Bu Raporu Sil
+  </button>
 
   <div class="bar">
     <button type="button" class="btn sec" id="newBtn">Yeni Rapor</button>
@@ -512,7 +527,7 @@ function renderHome() {
     return `<button type="button" class="tile" data-type="${k}"><span class="ic">${ICONS[k]}</span><b>${esc(t.ad)}</b><small>${desc}</small></button>`;
   }).join("");
   const draft = hasData();
-  $("#resumeBtn").hidden = !draft;
+  $("#resumeRow").hidden = !draft;
   if (draft) {
     const items = allItems();
     const done = items.filter(it => S.results[it.id]).length;
@@ -591,7 +606,18 @@ async function startNew(type) {
   renderEdit(); show("editView");
 }
 
+async function deleteDraft() {
+  if (!confirm("Devam eden rapor, girilen bilgiler ve fotoğraflarıyla birlikte silinsin mi?\nBu işlem geri alınamaz.")) return;
+  clearTimeout(saveT);
+  S = null;
+  try { localStorage.removeItem(SKEY); } catch (e) {}
+  photos = []; await DB.clear().catch(() => {});
+  renderHome(); show("homeView");
+  toast("Rapor silindi");
+}
+
 /* ---------- olaylar ---------- */
+document.addEventListener("click", (e) => { if (e.target.closest("[data-del]")) deleteDraft(); });
 $("#tiles").addEventListener("click", (e) => { const b = e.target.closest("[data-type]"); if (b) startNew(b.dataset.type); });
 $("#resumeBtn").addEventListener("click", () => { renderEdit(); show("editView"); });
 $("#homeBtn").addEventListener("click", () => { renderHome(); show("homeView"); });
