@@ -339,10 +339,10 @@ const KAYNAK_TELLERI = [
   { kod: "1020.0.90301006998", ad: "0,6 mm · AISI 316" },
   { kod: "1020.0.90341001998", ad: "0,6 mm · Sfero döküm" }
 ];
+const ARGON = "ARGON";                       // tel listesinde "Argon kaynağı" seçeneği
 const telBul = (kod) => KAYNAK_TELLERI.find(t => t.kod === kod);
 const OPS = [
   { k: "kaynak",  ad: "Kaynak",          kisa: "Kaynak" },
-  { k: "argon",   ad: "Argon kaynağı",   kisa: "Argon" },
   { k: "torna",   ad: "Torna",           kisa: "Torna" },
   { k: "iscilik", ad: "Sadece işçilik",  kisa: "İşçilik" }
 ];
@@ -567,12 +567,15 @@ function repairLineHTML(r, j) {
     const v = ops[o.k] || {};
     if (!v.on) return "";
     const tel = o.k === "kaynak" ? `
-      <label class="f">Kaynak teli
+      <label class="f">Kaynak teli / tipi
         <select data-op="${o.k}" data-of="tel">
           <option value="">Seçiniz</option>
-          ${KAYNAK_TELLERI.map(t => `<option value="${t.kod}" ${v.tel === t.kod ? "selected" : ""}>${esc(t.ad)} — ${t.kod}</option>`).join("")}
+          <optgroup label="Lazer kaynak teli">
+            ${KAYNAK_TELLERI.map(t => `<option value="${t.kod}" ${v.tel === t.kod ? "selected" : ""}>${esc(t.ad)} — ${t.kod}</option>`).join("")}
+          </optgroup>
+          <option value="${ARGON}" ${v.tel === ARGON ? "selected" : ""}>Argon kaynağı</option>
         </select></label>
-      <label class="f">Miktar (gram)<input type="text" inputmode="decimal" data-op="${o.k}" data-of="gram" value="${esc(v.gram || "")}" placeholder="Örn. 80"></label>` : "";
+      ${v.tel === ARGON ? "" : `<label class="f">Miktar (gram)<input type="text" inputmode="decimal" data-op="${o.k}" data-of="gram" value="${esc(v.gram || "")}" placeholder="Örn. 80"></label>`}` : "";
     return `<div class="opbox"><b>${o.ad}</b>${tel}
       <label class="f">Süre (saat)<input type="text" inputmode="decimal" data-op="${o.k}" data-of="saat" value="${esc(v.saat || "")}" placeholder="Örn. 2,5"></label></div>`;
   };
@@ -626,9 +629,11 @@ $("#balans").addEventListener("click", (e) => {
 function opsText(r) {
   const ops = r.ops || {};
   return OPS.filter(o => ops[o.k] && ops[o.k].on).map(o => {
-    const v = ops[o.k]; const t = o.k === "kaynak" ? telBul(v.tel) : null;
+    const v = ops[o.k]; const saat = v.saat ? ` ${v.saat} saat` : "";
+    if (o.k === "kaynak" && v.tel === ARGON) return `Argon kaynağı${saat}`;
+    const t = o.k === "kaynak" ? telBul(v.tel) : null;
     const tel = t ? ` ${v.gram ? v.gram + " gr " : ""}${t.kod} (${t.ad})` : "";
-    return `${o.kisa}${tel}${v.saat ? ` ${v.saat} saat` : ""}`;
+    return `${o.kisa}${tel}${saat}`;
   }).join(" · ");
 }
 
@@ -686,7 +691,7 @@ document.addEventListener("input", (e) => {
   else if (el.dataset.op) {
     const r = fd.repairs[+el.closest(".rline").dataset.ri]; r.ops ||= {};
     const o = r.ops[el.dataset.op] ||= { on: true };
-    if (el.dataset.of === "tel") { o.tel = el.value; save(); }
+    if (el.dataset.of === "tel") { o.tel = el.value; save(); rerenderFinding(fd.id); }   // argon seçilince gram alanı gizlensin
     else if (el.dataset.of === "gram") { o.gram = el.value; save(); }
     else if (el.dataset.of === "saat") { o.saat = el.value; save(); }
   }
@@ -911,8 +916,8 @@ function validate() {
     if (fd.repair && fd.repairs.some(r => r.labor && !(r.desc || "").trim())) p.push("işçilik açıklaması yazılmadı");
     if (fd.repair) for (const r of fd.repairs) for (const o of OPS) {
       const v = (r.ops || {})[o.k]; if (!v || !v.on) continue;
-      if (o.k === "kaynak" && !telBul(v.tel)) p.push("kaynak teli seçilmedi");
-      if (o.k === "kaynak" && !(num(v.gram) > 0)) p.push("kaynak teli gramı girilmedi");
+      if (o.k === "kaynak" && !telBul(v.tel) && v.tel !== ARGON) p.push("kaynak teli / tipi seçilmedi");
+      if (o.k === "kaynak" && telBul(v.tel) && !(num(v.gram) > 0)) p.push("kaynak teli gramı girilmedi");
       if (!(num(v.saat) > 0)) p.push(`${o.ad.toLocaleLowerCase("tr")} süresi girilmedi`);
     }
     if (p.length) { errs.push(`Tespit ${i + 1}: ${p.join(", ")}`); $(`.finding[data-fid="${fd.id}"]`)?.classList.add("err"); }
@@ -942,7 +947,14 @@ function buildReport() {
   const bal = BALANS.find(b => b.k === E.balans);
   if (bal) for (const s of bal.satirlar) repairs.push({ desc: s, adet: "1" });
   // İşlem bazında toplam saat
-  const totals = OPS.map(o => ({ o, saat: repairs.reduce((t, r) => t + ((r.ops || {})[o.k] && r.ops[o.k].on ? num(r.ops[o.k].saat) : 0), 0) })).filter(x => x.saat > 0);
+  // İşlem bazında toplam saat (kaynak: lazer ve argon ayrı)
+  const kind = (k, v) => k === "kaynak" ? (v.tel === ARGON ? "Argon kaynağı" : "Lazer kaynak") : OPS.find(o => o.k === k).ad;
+  const totMap = new Map();
+  for (const r of repairs) for (const [k, v] of Object.entries(r.ops || {})) {
+    if (!v.on || !OPS.some(o => o.k === k)) continue;
+    const n = kind(k, v); totMap.set(n, (totMap.get(n) || 0) + num(v.saat));
+  }
+  const totals = [...totMap].filter(([, s]) => s > 0).map(([ad, saat]) => ({ o: { ad }, saat }));
   // Kaynak teli: kod bazında toplam gram
   const telTop = new Map();
   for (const r of repairs) { const v = (r.ops || {}).kaynak; if (v && v.on && telBul(v.tel)) telTop.set(v.tel, (telTop.get(v.tel) || 0) + num(v.gram)); }
