@@ -1,5 +1,6 @@
-const CACHE = "kontrol-raporu-v9";
-const FILES = ["./", "./index.html", "./ekspertiz.html", "./katalog-ucd345.js", "./manifest.json", "./logo.png", "./dekanter.jpg", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
+const CACHE = "kontrol-raporu-v10";
+const CIZIMLER = ["genel", "sase", "kapak", "besleme", "sanziman", "sensor", "motor", "motorkapak", "kayis", "hconta", "tconta", "helezon", "tambur", "yedekset"].map((n) => `./cizim-${n}.jpg`);
+const FILES = ["./", "./index.html", "./ekspertiz.html", "./katalog-ucd345.js", "./cizimler-ucd345.js", "./manifest.json", "./logo.png", "./dekanter.jpg", "./icon-180.png", "./icon-192.png", "./icon-512.png", ...CIZIMLER];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)));

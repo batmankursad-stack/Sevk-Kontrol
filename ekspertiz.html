@@ -122,8 +122,64 @@
   .btn { flex:1; border:none; border-radius:12px; padding:14px 16px; font-weight:700; font-size:15px; cursor:pointer; background:var(--accent); color:#fff; }
   .btn.sec { background:transparent; color:var(--text); border:1.5px solid var(--line); flex:0 1 auto; }
   .delbtn { width:100%; padding:13px; border-radius:12px; border:1.5px solid var(--bad); background:transparent; color:var(--bad); font-weight:700; cursor:pointer; }
-  .toast { position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#2b2f36; color:#fff; padding:9px 14px; border-radius:10px; font-size:13px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:30; white-space:nowrap; }
+  .toast { position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#2b2f36; color:#fff; padding:9px 14px; border-radius:10px; font-size:13px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:60; white-space:nowrap; }
   .toast.show { opacity:1; }
+
+  /* ---------- tadilat / parça satırları ---------- */
+  .pline { grid-template-columns:1fr 74px 34px; }
+  .pline .note { grid-column:1 / -1; padding:8px 10px; font-size:14px; }
+  .pos { display:inline-block; font-size:10.5px; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:6px; padding:1px 6px; margin-left:6px; vertical-align:1px; }
+  .rline { display:grid; grid-template-columns:1fr 74px 34px; gap:8px; align-items:center; padding:10px; border-radius:10px; background:var(--card); border:1px solid var(--line); }
+  .rline .head { grid-column:1 / -1; font-size:12.5px; color:var(--muted); }
+  .rline .head .cp { font-family:ui-monospace,Menlo,Consolas,monospace; font-weight:700; color:var(--ok); }
+  .rline input { padding:9px 8px; }
+  .rline input[data-rq] { text-align:center; }
+  .pickbtn { width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:12px; border:1.5px solid var(--accent); background:var(--accent); color:#fff; font-weight:700; cursor:pointer; margin-bottom:10px; }
+  .pickbtn svg { width:20px; height:20px; }
+  .linkbtn { background:none; border:none; color:var(--accent); font-weight:700; padding:8px 2px; cursor:pointer; }
+
+  /* ---------- çizimden seçim ---------- */
+  .picker { position:fixed; inset:0; z-index:40; background:var(--bg); display:flex; flex-direction:column; }
+  .pk-top { display:flex; align-items:center; gap:10px; padding:calc(env(safe-area-inset-top) + 10px) 12px 10px; background:var(--card); border-bottom:3px solid var(--accent); }
+  .pk-top b { font-size:15px; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pk-top button { border:1px solid var(--line); background:transparent; color:var(--text); border-radius:10px; padding:8px 12px; font-weight:600; cursor:pointer; }
+  .pk-body { flex:1; overflow:auto; -webkit-overflow-scrolling:touch; }
+  .pk-groups { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; padding:12px; }
+  .pk-tile { border:1px solid var(--line); border-radius:12px; background:#fff; overflow:hidden; cursor:pointer; text-align:left; padding:0; color:#2b2f36; }
+  .pk-tile img { width:100%; aspect-ratio:1778/1080; object-fit:cover; display:block; border-bottom:1px solid #e5e7eb; }
+  .pk-tile span { display:block; padding:8px 10px; font-weight:700; font-size:13.5px; }
+  .pk-tile small { display:block; padding:0 10px 8px; color:#6b7280; font-size:11.5px; }
+  .pk-zoom { display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--card); border-bottom:1px solid var(--line); font-size:13px; color:var(--muted); }
+  .pk-zoom button { width:36px; height:32px; border-radius:8px; border:1px solid var(--line); background:var(--input); color:var(--text); font-size:18px; font-weight:700; cursor:pointer; }
+  .pk-zoom span.z { min-width:44px; text-align:center; font-weight:700; color:var(--text); }
+  .pk-canvas { position:relative; background:#fff; }
+  .pk-canvas img { width:100%; display:block; }
+  .hsb { position:absolute; transform:translate(-50%,-50%); min-width:30px; height:22px; padding:0 4px; border-radius:6px; border:2px solid #e8612c; background:rgba(255,255,255,.92); color:#e8612c; font:700 11px/18px system-ui,sans-serif; text-align:center; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+  .hsb.on { background:#e8612c; color:#fff; }
+  .hsb.on::after { content:" ✓"; }
+  .hsb.nav { border-color:#1d4ed8; color:#1d4ed8; }
+  .pk-list { padding:12px; }
+  .pk-list summary { font-weight:700; cursor:pointer; padding:6px 0; }
+  .pk-row { display:grid; grid-template-columns:52px 1fr; gap:8px; width:100%; text-align:left; padding:9px 10px; margin-top:6px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--text); cursor:pointer; font-size:13px; }
+  .pk-row b { color:var(--accent); }
+  .pk-row.on { border-color:var(--accent); background:var(--accent-soft); }
+
+  .sheet-bg { position:fixed; inset:0; z-index:45; background:rgba(0,0,0,.35); }
+  .sheet { position:fixed; left:0; right:0; bottom:0; z-index:46; max-height:82vh; overflow:auto; background:var(--card); border-radius:18px 18px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom)); box-shadow:0 -8px 24px rgba(0,0,0,.2); max-width:640px; margin:0 auto; }
+  .sheet h3 { margin:0 0 4px; font-size:17px; }
+  .sheet .sub { color:var(--muted); font-size:13px; margin-bottom:12px; }
+  .opt { display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border:1.5px solid var(--line); border-radius:12px; margin-bottom:8px; cursor:pointer; }
+  .opt input { margin-top:3px; accent-color:var(--accent); width:18px; height:18px; }
+  .opt:has(input:checked) { border-color:var(--accent); background:var(--accent-soft); }
+  .opt .nm { font-weight:700; font-size:14px; }
+  .opt .cd { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px; margin-top:3px; }
+  .opt .cd .cp { color:var(--ok); font-weight:700; }
+  .opt .qt { font-size:12px; color:var(--muted); margin-top:2px; }
+  .kinds { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0; }
+  .kind { display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:12px; border:1.5px solid var(--line); font-weight:700; cursor:pointer; }
+  .kind input { width:20px; height:20px; accent-color:var(--accent); }
+  .kind:has(input:checked) { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+  .sheet .acts { display:flex; gap:10px; margin-top:14px; }
 
   /* ================= RAPOR (A4) ================= */
   .paper { background:#fff; color:#1f2328; width:760px; margin:0 auto; padding:22px; border-radius:6px; box-shadow:0 2px 14px rgba(0,0,0,.12); font-size:11px; }
@@ -169,6 +225,7 @@
   }
 </style>
 <script src="katalog-ucd345.js"></script>
+<script src="cizimler-ucd345.js"></script>
 </head>
 <body>
 
@@ -233,6 +290,23 @@
 </div>
 
 </main>
+
+<!-- ================= ÇİZİMDEN SEÇİM ================= -->
+<div class="picker" id="picker" hidden>
+  <div class="pk-top">
+    <button type="button" id="pkBack" aria-label="Geri">‹ Gruplar</button>
+    <b id="pkTitle">Çizimden Seç</b>
+    <button type="button" id="pkClose">Bitti</button>
+  </div>
+  <div class="pk-zoom" id="pkZoom" hidden>
+    <button type="button" data-z="-1" aria-label="Uzaklaştır">−</button><span class="z" id="pkZ"></span><button type="button" data-z="1" aria-label="Yakınlaştır">+</button>
+    <span>Numaraya dokun</span>
+  </div>
+  <div class="pk-body" id="pkBody"></div>
+</div>
+<div class="sheet-bg" id="sheetBg" hidden></div>
+<div class="sheet" id="sheet" hidden></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -255,7 +329,8 @@ const toast = (t) => { const el = $("#toast"); el.textContent = t; el.classList.
 const ICON_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
 const ICON_GAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>';
 const ICON_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>';
-const ICON_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
+const ICON_DRAW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="10" r="3"/><path d="M11 12l6 6M15 7h3M15 11h3"/></svg>';
+const ICON_SEARCH ='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
 
 /* ==================================================================
    KATALOG & CENTRIPLUS KODU
@@ -311,11 +386,17 @@ function searchParts(q) {
 function blank() {
   return { f: { tarih: today(), musteri: "", model: "" }, findings: [newFinding()], kits: {} };
 }
-function newFinding() { return { id: uid(), desc: "", change: false, repair: false, parts: [], repairDesc: "", repairQty: "" }; }
+// parts:   değişecek parçalar  {code, kod, src, ad, adet, birim, not, grp, pos}
+// repairs: tadilat satırları   {desc, adet, code?, kod?, src?, ad?, grp?, pos?}
+function newFinding() { return { id: uid(), desc: "", change: false, repair: false, parts: [], repairs: [] }; }
 
 let E;
 try { E = JSON.parse(localStorage.getItem(SKEY) || "null"); } catch (e) { E = null; }
 if (!E || !E.findings) E = blank();
+// Eski taslaklar: tek satırlık tadilatı listeye çevir
+for (const fd of E.findings) {
+  if (!fd.repairs) { fd.repairs = fd.repairDesc ? [{ desc: fd.repairDesc, adet: fd.repairQty || "" }] : []; delete fd.repairDesc; delete fd.repairQty; }
+}
 
 let saveT;
 function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(SKEY, JSON.stringify(E)); } catch (e) {} }, 250); }
@@ -401,27 +482,40 @@ function findingHTML(fd, i) {
 
     <div class="panel" ${fd.change ? "" : "hidden"}>
       <h3>Değişecek parçalar</h3>
-      <div class="search">${ICON_SEARCH}<input type="text" data-search placeholder="Üretici kodu veya parça adı" autocomplete="off" autocapitalize="characters"></div>
+      <button type="button" class="pickbtn" data-act="pick" data-mode="change">${ICON_DRAW} Çizimden Seç</button>
+      <div class="search">${ICON_SEARCH}<input type="text" data-search placeholder="veya üretici kodu / parça adı yaz" autocomplete="off" autocapitalize="characters"></div>
       <div class="results"></div>
       <div class="plist">${fd.parts.map((p, j) => partLineHTML(p, j)).join("")}</div>
     </div>
 
     <div class="panel" ${fd.repair ? "" : "hidden"}>
       <h3>Tadilat</h3>
-      <div class="grid" style="grid-template-columns:1fr 90px">
-        <label class="f">Yapılacak tadilat<input type="text" data-k="repairDesc" value="${esc(fd.repairDesc)}"></label>
-        <label class="f">Adet<input type="text" data-k="repairQty" inputmode="decimal" value="${esc(fd.repairQty)}"></label>
-      </div>
+      <button type="button" class="pickbtn" data-act="pick" data-mode="repair">${ICON_DRAW} Çizimden Seç</button>
+      <div class="plist">${fd.repairs.map((r, j) => repairLineHTML(r, j)).join("")}</div>
+      <button type="button" class="linkbtn" data-act="addRepair">+ Parçasız tadilat satırı ekle</button>
     </div>
   </div>`;
 }
 
+const posTag = (x) => x.pos ? `<span class="pos">${esc(x.grp)} · Pos ${esc(x.pos)}</span>` : "";
+
 function partLineHTML(p, j) {
   return `<div class="pline" data-pi="${j}">
     <div><div class="cp">${esc(p.kod)}${SRC_TAG[p.src]}</div>
-      <div class="meta"><span class="mono">${esc(p.code)}</span> · ${esc(p.ad || "—")}</div></div>
+      <div class="meta"><span class="mono">${esc(p.code)}</span> · ${esc(p.ad || "—")}${posTag(p)}</div></div>
     <input type="text" data-pq inputmode="decimal" value="${esc(p.adet)}" aria-label="Adet">
     <button type="button" class="icon-btn" data-act="rmPart" aria-label="Parçayı kaldır" style="margin:0">${ICON_DEL}</button>
+    <input type="text" class="note" data-pn value="${esc(p.not || "")}" placeholder="Açıklama (isteğe bağlı)">
+  </div>`;
+}
+
+function repairLineHTML(r, j) {
+  const head = r.code
+    ? `<div class="head"><span class="cp">${esc(r.kod)}</span> · <span class="mono">${esc(r.code)}</span> · ${esc(r.ad)}${posTag(r)}</div>` : "";
+  return `<div class="rline" data-ri="${j}">${head}
+    <input type="text" data-rd value="${esc(r.desc)}" placeholder="Yapılacak tadilat">
+    <input type="text" data-rq inputmode="decimal" value="${esc(r.adet)}" placeholder="Adet" aria-label="Adet">
+    <button type="button" class="icon-btn" data-act="rmRepair" aria-label="Satırı kaldır" style="margin:0">${ICON_DEL}</button>
   </div>`;
 }
 
@@ -482,7 +576,7 @@ function addPart(fid, code, outside) {
   const p = PARTS.find(x => x.code === code);
   const exist = fd.parts.find(x => x.code === code);
   if (exist) { toast("Bu parça zaten listede"); return; }
-  fd.parts.push({ code, kod: cp.kod, src: outside ? "dis" : cp.src, ad: (p && p.ad) || (K.erp[code] && K.erp[code].ad) || "", adet: "1", birim: p ? p.birim : "AD." });
+  fd.parts.push({ code, kod: cp.kod, src: outside ? "dis" : cp.src, ad: (p && p.ad) || (K.erp[code] && K.erp[code].ad) || "", adet: "1", birim: p ? p.birim : "AD.", not: "" });
   save(); rerenderFinding(fid);
   toast("Parça eklendi");
 }
@@ -500,6 +594,9 @@ document.addEventListener("input", (e) => {
   if (el.dataset.k) { fd[el.dataset.k] = el.value; save(); }
   else if (el.dataset.search !== undefined) renderResults(fdEl, el.value);
   else if (el.dataset.pq !== undefined) { fd.parts[+el.closest(".pline").dataset.pi].adet = el.value; save(); }
+  else if (el.dataset.pn !== undefined) { fd.parts[+el.closest(".pline").dataset.pi].not = el.value; save(); }
+  else if (el.dataset.rd !== undefined) { fd.repairs[+el.closest(".rline").dataset.ri].desc = el.value; save(); }
+  else if (el.dataset.rq !== undefined) { fd.repairs[+el.closest(".rline").dataset.ri].adet = el.value; save(); }
 });
 document.addEventListener("change", (e) => {
   if (e.target.dataset.kit) { E.kits[e.target.dataset.kit] = e.target.checked; save(); }
@@ -512,6 +609,9 @@ $("#findings").addEventListener("click", async (e) => {
 
   if (act === "change" || act === "repair") { fd[act] = !fd[act]; save(); rerenderFinding(fid); return; }
   if (act === "rmPart") { fd.parts.splice(+e.target.closest(".pline").dataset.pi, 1); save(); rerenderFinding(fid); return; }
+  if (act === "rmRepair") { fd.repairs.splice(+e.target.closest(".rline").dataset.ri, 1); save(); rerenderFinding(fid); return; }
+  if (act === "addRepair") { fd.repairs.push({ desc: "", adet: "1" }); save(); rerenderFinding(fid); $(`.finding[data-fid="${fid}"] .rline:last-child [data-rd]`)?.focus(); return; }
+  if (act === "pick") { if (!E.f.model) { alert("Önce müşteri adını gir; makine seçilince çizimler açılır."); return; } openPicker(fid); return; }
   if (act === "delFinding") {
     if (!confirm(`Tespit ${E.findings.indexOf(fd) + 1} ve görselleri silinsin mi?`)) return;
     for (const p of photos.filter(p => p.finding === fid)) await DB.del(p.id).catch(() => {});
@@ -558,6 +658,145 @@ $("#delBtn").addEventListener("click", async () => {
 });
 
 /* ==================================================================
+   ÇİZİMDEN SEÇİM (patlak resim)
+================================================================== */
+const GROUPS = (window.CIZIM ? window.CIZIM.gruplar : []).map(g => {
+  // Pozisyon → satırlar (pozisyonu boş satırlar bir üstteki pozisyonun alt kalemi)
+  const byPos = new Map(); let last = null;
+  for (const [pos, code, en, qty] of g.rows) {
+    const key = pos || last; if (!key) continue; last = key;
+    if (!byPos.has(key)) byPos.set(key, []);
+    byPos.get(key).push({ code, en, qty });
+  }
+  return { ...g, byPos };
+});
+const groupByCode = (code) => GROUPS.find(g => g.asm === code);
+
+const PK = { fid: null, grp: null, zoom: 1 };
+const ZOOMS = [1, 1.5, 2, 2.5, 3, 4];
+
+function openPicker(fid) {
+  PK.fid = fid; $("#picker").hidden = false; document.body.style.overflow = "hidden";
+  if (PK.grp) showGroup(PK.grp); else showGroups();
+}
+function closePicker() {
+  $("#picker").hidden = true; closeSheet(); document.body.style.overflow = "";
+  rerenderFinding(PK.fid);
+}
+
+function showGroups() {
+  PK.grp = null;
+  $("#pkTitle").textContent = "Montaj grubu seç"; $("#pkBack").hidden = true; $("#pkZoom").hidden = true;
+  const order = ["MAIN", "8405-6600-150", "8405-6539-070", "8405-1100-120", "8405-3351-000", "8405-3240-000", "8405-6007-090", "8405-6006-040"];
+  const list = [...GROUPS].sort((a, b) => ((order.indexOf(a.asm) + 1) || 99) - ((order.indexOf(b.asm) + 1) || 99));
+  $("#pkBody").innerHTML = `<div class="pk-groups">${list.map(g => `
+    <button type="button" class="pk-tile" data-grp="${g.asm}"><img src="${g.img}" alt="" loading="lazy">
+      <span>${esc(g.ad)}</span><small>${g.asm === "MAIN" ? "Gruba dokunarak geç" : `${g.byPos.size} pozisyon`}</small></button>`).join("")}</div>`;
+  $("#pkBody").scrollTop = 0;
+}
+
+// Bu tespitte seçilmiş pozisyonlar (çizimde dolu gösterilir)
+function selectedPositions(grpName) {
+  const fd = F(PK.fid); const s = new Set();
+  for (const x of [...fd.parts, ...fd.repairs]) if (x.grp === grpName && x.pos) s.add(x.pos);
+  return s;
+}
+
+function showGroup(asm) {
+  const g = groupByCode(asm); PK.grp = asm;
+  $("#pkTitle").textContent = g.ad; $("#pkBack").hidden = false; $("#pkZoom").hidden = false;
+  if (!PK.zoomSet) { PK.zoom = ZOOMS.reduce((best, z) => (z * $("#pkBody").clientWidth <= 1100 ? z : best), 1); PK.zoomSet = true; }
+  const sel = selectedPositions(g.ad);
+  const isMain = asm === "MAIN";
+  const badges = g.hs.map(([pos, x, y, w, h]) => {
+    const nav = isMain && groupByCode((g.byPos.get(pos) || [])[0]?.code);
+    return `<button type="button" class="hsb ${nav ? "nav" : ""} ${sel.has(pos) ? "on" : ""}" data-pos="${pos}" style="left:${x + w / 2}%;top:${y + h / 2}%">${pos}</button>`;
+  }).join("");
+  const rows = [...g.byPos.entries()].map(([pos, items]) => `
+    <button type="button" class="pk-row ${sel.has(pos) ? "on" : ""}" data-pos="${pos}"><b>Pos ${esc(pos)}</b><span>${esc(items[0].en)}<br><span class="mono" style="color:var(--muted)">${esc(items[0].code)}</span></span></button>`).join("");
+  $("#pkBody").innerHTML = `
+    <div class="pk-canvas" id="pkCanvas" style="width:${PK.zoom * 100}%"><img src="${g.img}" alt="${esc(g.ad)}">${badges}</div>
+    <details class="pk-list" ${g.hs.length ? "" : "open"}><summary>Pozisyon listesi (${g.byPos.size})</summary>
+      ${g.hs.length ? "" : `<div class="hint">Bu çizimde numaralar işaretli değil, listeden seç.</div>`}${rows}</details>`;
+  $("#pkZ").textContent = Math.round(PK.zoom * 100) + "%";
+}
+
+function setZoom(dir) {
+  const i = Math.max(0, Math.min(ZOOMS.length - 1, ZOOMS.indexOf(PK.zoom) + dir));
+  const body = $("#pkBody"), c = $("#pkCanvas"); if (!c) return;
+  // ekranın ortası aynı noktada kalsın
+  const cx = (body.scrollLeft + body.clientWidth / 2) / c.offsetWidth, cy = (body.scrollTop + body.clientHeight / 2) / c.offsetHeight;
+  PK.zoom = ZOOMS[i]; c.style.width = PK.zoom * 100 + "%"; $("#pkZ").textContent = Math.round(PK.zoom * 100) + "%";
+  body.scrollLeft = cx * c.offsetWidth - body.clientWidth / 2; body.scrollTop = cy * c.offsetHeight - body.clientHeight / 2;
+}
+
+function openSheet(pos) {
+  const g = groupByCode(PK.grp); const items = g.byPos.get(pos) || [];
+  if (!items.length) { toast("Bu pozisyon listede yok"); return; }
+  // Genel görünümde alt grup çizimi varsa oraya geç
+  const sub = PK.grp === "MAIN" && groupByCode(items[0].code);
+  if (sub) { showGroup(sub.asm); $("#pkBody").scrollTop = 0; return; }
+  const fd = F(PK.fid);
+  const sh = $("#sheet");
+  sh.innerHTML = `
+    <h3>Pos ${esc(pos)} · ${esc(items[0].en)}</h3>
+    <div class="sub">${esc(g.ad)} grubu</div>
+    ${items.map((it, i) => { const cp = cpFor(it.code); return `
+      <label class="opt"><input type="radio" name="shItem" value="${i}" ${i === 0 ? "checked" : ""}>
+        <div><div class="nm">${esc(it.en)}</div>
+          <div class="cd">Üretici: ${esc(it.code)}</div>
+          <div class="cd">Centriplus: <span class="cp">${esc(cp.kod)}</span> ${SRC_TAG[cp.src]}</div>
+          <div class="qt">Katalogdaki adet: ${esc(it.qty)}</div></div></label>`; }).join("")}
+    <div class="kinds">
+      <label class="kind"><input type="checkbox" id="shChange" ${fd.repair && !fd.change ? "" : "checked"}> Değişim</label>
+      <label class="kind"><input type="checkbox" id="shRepair" ${fd.repair && !fd.change ? "checked" : ""}> Tadilat</label>
+    </div>
+    <div class="grid" style="grid-template-columns:90px 1fr">
+      <label class="f">Adet<input type="text" id="shQty" inputmode="decimal" value="1"></label>
+      <label class="f">Açıklama<input type="text" id="shNote" placeholder="Örn. yatak yüzeyinde aşınma"></label>
+    </div>
+    <div class="acts"><button type="button" class="btn sec" id="shCancel">Vazgeç</button><button type="button" class="btn" id="shAdd">Ekle</button></div>`;
+  sh.dataset.pos = pos;
+  sh.hidden = false; $("#sheetBg").hidden = false;
+}
+function closeSheet() { $("#sheet").hidden = true; $("#sheetBg").hidden = true; }
+
+function addFromSheet() {
+  const g = groupByCode(PK.grp); const pos = $("#sheet").dataset.pos;
+  const it = g.byPos.get(pos)[+$('input[name="shItem"]:checked').value];
+  const doChange = $("#shChange").checked, doRepair = $("#shRepair").checked;
+  if (!doChange && !doRepair) { toast("Değişim veya Tadilat seç"); return; }
+  const fd = F(PK.fid), cp = cpFor(it.code);
+  const adet = $("#shQty").value.trim() || "1", note = $("#shNote").value.trim();
+  const base = { code: it.code, kod: cp.kod, src: cp.src, ad: it.en, grp: g.ad, pos };
+  if (doChange) {
+    const ex = fd.parts.find(p => p.code === it.code);
+    if (ex) { ex.adet = adet; if (note) ex.not = note; }
+    else fd.parts.push({ ...base, adet, birim: /m$/.test(it.qty) ? "Mt" : "AD.", not: note });
+    fd.change = true;
+  }
+  if (doRepair) { fd.repairs.push({ ...base, desc: note || it.en, adet }); fd.repair = true; }
+  save(); closeSheet(); showGroupKeepScroll();
+  toast(`Pos ${pos} eklendi`);
+}
+function showGroupKeepScroll() {
+  const b = $("#pkBody"), l = b.scrollLeft, t = b.scrollTop; showGroup(PK.grp); b.scrollLeft = l; b.scrollTop = t;
+}
+
+$("#pkBody").addEventListener("click", (e) => {
+  const t = e.target.closest("[data-grp]"); if (t) { showGroup(t.dataset.grp); $("#pkBody").scrollTop = 0; return; }
+  const p = e.target.closest("[data-pos]"); if (p) openSheet(p.dataset.pos);
+});
+$("#pkZoom").addEventListener("click", (e) => { const z = e.target.closest("[data-z]"); if (z) setZoom(+z.dataset.z); });
+$("#pkBack").addEventListener("click", showGroups);
+$("#pkClose").addEventListener("click", closePicker);
+$("#sheetBg").addEventListener("click", closeSheet);
+$("#sheet").addEventListener("click", (e) => {
+  if (e.target.id === "shCancel") closeSheet();
+  if (e.target.id === "shAdd") addFromSheet();
+});
+
+/* ==================================================================
    RAPOR
 ================================================================== */
 function validate() {
@@ -569,7 +808,7 @@ function validate() {
     if (!photos.some(x => x.finding === fd.id)) p.push("görsel yok");
     if (!fd.desc.trim()) p.push("açıklama yok");
     if (fd.change && !fd.parts.length) p.push("değişecek parça seçilmedi");
-    if (fd.repair && !fd.repairDesc.trim()) p.push("tadilat yazılmadı");
+    if (fd.repair && !fd.repairs.some(r => (r.desc || "").trim() || r.code)) p.push("tadilat yazılmadı");
     if (p.length) { errs.push(`Tespit ${i + 1}: ${p.join(", ")}`); $(`.finding[data-fid="${fd.id}"]`)?.classList.add("err"); }
   });
   return errs;
@@ -590,9 +829,11 @@ function buildReport() {
   for (const k of (f.model ? K.kitler : [])) if (E.kits[k.kod]) spare.push({ kod: k.kod, code: "", ad: k.ad, adet: k.adet, birim: k.birim });
   for (const fd of E.findings) if (fd.change) for (const p of fd.parts) {
     const ex = spare.find(s => s.kod === p.kod);
-    if (ex) ex.adet = num(ex.adet) + num(p.adet); else spare.push({ ...p, adet: num(p.adet) });
+    if (ex) { ex.adet = num(ex.adet) + num(p.adet); if (p.not) ex.notlar.push(p.not); }
+    else spare.push({ ...p, adet: num(p.adet), notlar: p.not ? [p.not] : [] });
   }
-  const repairs = E.findings.filter(fd => fd.repair && fd.repairDesc.trim());
+  const repairs = E.findings.flatMap(fd => fd.repair ? fd.repairs.filter(r => (r.desc || "").trim() || r.code) : []);
+  const where = (x) => x.pos ? ` <span style="color:#777">(${esc(x.grp)} · Pos ${esc(x.pos)})</span>` : "";
 
   // Her tespit bölünmez bir blok; 4'ten fazla görsel varsa devam bloklarına bölünür.
   // İlk blok bölüm başlığını da taşır, böylece başlık sayfa sonunda tek kalmaz.
@@ -600,8 +841,11 @@ function buildReport() {
   E.findings.forEach((fd, i) => {
     const ph = photos.filter(p => p.finding === fd.id);
     const acts = [];
-    if (fd.change && fd.parts.length) acts.push(`<div class="act"><b>Değişim:</b> ${fd.parts.map(p => `<span class="mono">${esc(p.kod)}</span> ${esc(p.ad)} × ${esc(p.adet)}`).join("; ")}</div>`);
-    if (fd.repair && fd.repairDesc) acts.push(`<div class="act"><b>Tadilat:</b> ${esc(fd.repairDesc)}${fd.repairQty ? " × " + esc(fd.repairQty) : ""}</div>`);
+    if (fd.change && fd.parts.length) acts.push(`<div class="act"><b>Değişim:</b> ${fd.parts.map(p =>
+      `<span class="mono">${esc(p.kod)}</span> ${esc(p.ad)}${p.pos ? ` (Pos ${esc(p.pos)})` : ""} × ${esc(p.adet)}${p.not ? ` — ${esc(p.not)}` : ""}`).join("; ")}</div>`);
+    const rs = fd.repair ? fd.repairs.filter(r => (r.desc || "").trim() || r.code) : [];
+    if (rs.length) acts.push(`<div class="act"><b>Tadilat:</b> ${rs.map(r =>
+      `${esc(r.desc || r.ad)}${r.code ? ` (${esc(r.ad)}${r.pos ? `, Pos ${esc(r.pos)}` : ""})` : ""}${r.adet ? " × " + esc(r.adet) : ""}`).join("; ")}</div>`);
     for (let c = 0; c < Math.max(1, ph.length); c += 4) {
       const chunk = ph.slice(c, c + 4);
       const text = c === 0
@@ -640,13 +884,13 @@ function buildReport() {
 
     <table class="r-tbl" style="margin-top:10px">
       <thead>${cap("SPARE PARTS / YEDEK PARÇALAR", 5)}<tr><th style="width:6%">NO</th><th style="width:24%">MATERIAL CODE / MALZEME KODU</th><th style="width:17%">ÜRETİCİ KODU</th><th>EXPLANATION / AÇIKLAMA</th><th style="width:11%">PIECE / ADET</th></tr></thead>
-      <tbody>${spare.length ? spare.map((s, i) => `<tr><td style="text-align:center">${i + 1}</td><td class="mono">${esc(s.kod)}</td><td class="mono">${esc(s.code)}</td><td>${esc(s.ad)}</td><td style="text-align:center">${fmtNum(num(s.adet))} ${esc(s.birim)}</td></tr>`).join("")
+      <tbody>${spare.length ? spare.map((s, i) => `<tr><td style="text-align:center">${i + 1}</td><td class="mono">${esc(s.kod)}</td><td class="mono">${esc(s.code)}</td><td>${esc(s.ad)}${where(s)}${s.notlar && s.notlar.length ? `<br><span style="color:#555">${esc(s.notlar.join("; "))}</span>` : ""}</td><td style="text-align:center">${fmtNum(num(s.adet))} ${esc(s.birim)}</td></tr>`).join("")
         : `<tr><td colspan="5" style="text-align:center;color:#777">Yedek parça yok</td></tr>`}</tbody>
     </table>
 
     <table class="r-tbl" style="margin-top:12px">
       <thead>${cap("REVISION SPARE PARTS / TADİLAT PARÇALARI", 4)}<tr><th style="width:6%">NO</th><th style="width:24%">LABOR CODE / İŞÇİLİK KODU</th><th>EXPLANATION / AÇIKLAMA</th><th style="width:11%">PIECE / ADET</th></tr></thead>
-      <tbody>${repairs.length ? repairs.map((fd, i) => `<tr><td style="text-align:center">${i + 1}</td><td></td><td>${esc(fd.repairDesc)}</td><td style="text-align:center">${esc(fd.repairQty)}</td></tr>`).join("")
+      <tbody>${repairs.length ? repairs.map((r, i) => `<tr><td style="text-align:center">${i + 1}</td><td></td><td>${esc(r.desc || r.ad)}${r.code ? `<br><span style="color:#555"><span class="mono">${esc(r.kod)}</span> ${esc(r.ad)}</span>${where(r)}` : ""}</td><td style="text-align:center">${esc(r.adet)}</td></tr>`).join("")
         : `<tr><td colspan="4" style="text-align:center;color:#777">Tadilat yok</td></tr>`}</tbody>
     </table>
 
