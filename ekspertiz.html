@@ -330,14 +330,15 @@
 const K = window.KATALOG;
 
 /* Tadilat işlemleri — her tadilat satırında isteğe bağlı açılır */
+// Centriplus kaynak teli kodları (WELDING ROD — lazer makinesi kaynak teli)
 const KAYNAK_TELLERI = [
-  "SG2 / ER70S-6 (karbon çelik)",
-  "ER308L (paslanmaz)",
-  "ER309L (paslanmaz–karbon birleştirme)",
-  "ER316L (paslanmaz)",
-  "ER2209 (dubleks)",
-  "Sert dolgu teli (tungsten karbür)"
+  { kod: "1020.0.90201006998", ad: "0,6 mm · 4140" },
+  { kod: "1020.0.90301001998", ad: "0,6 mm · 1.4462 Dubleks" },
+  { kod: "1020.0.90301003998", ad: "0,6 mm · AISI 304" },
+  { kod: "1020.0.90301006998", ad: "0,6 mm · AISI 316" },
+  { kod: "1020.0.90341001998", ad: "0,6 mm · Sfero döküm" }
 ];
+const telBul = (kod) => KAYNAK_TELLERI.find(t => t.kod === kod);
 const OPS = [
   { k: "kaynak",  ad: "Kaynak",          kisa: "Kaynak" },
   { k: "argon",   ad: "Argon kaynağı",   kisa: "Argon" },
@@ -558,10 +559,9 @@ function repairLineHTML(r, j) {
       <label class="f">Kaynak teli
         <select data-op="${o.k}" data-of="tel">
           <option value="">Seçiniz</option>
-          ${KAYNAK_TELLERI.map(t => `<option ${v.tel === t ? "selected" : ""}>${esc(t)}</option>`).join("")}
-          <option value="__diger" ${v.tel && !KAYNAK_TELLERI.includes(v.tel) ? "selected" : ""}>Diğer (yaz)</option>
+          ${KAYNAK_TELLERI.map(t => `<option value="${t.kod}" ${v.tel === t.kod ? "selected" : ""}>${esc(t.ad)} — ${t.kod}</option>`).join("")}
         </select></label>
-      ${v.tel && !KAYNAK_TELLERI.includes(v.tel) ? `<label class="f">Tel tipi<input type="text" data-op="${o.k}" data-of="telx" value="${esc(v.tel === "__diger" ? "" : v.tel)}" placeholder="Tel tipini yaz"></label>` : ""}` : "";
+      <label class="f">Miktar (gram)<input type="text" inputmode="decimal" data-op="${o.k}" data-of="gram" value="${esc(v.gram || "")}" placeholder="Örn. 80"></label>` : "";
     return `<div class="opbox"><b>${o.ad}</b>${tel}
       <label class="f">Süre (saat)<input type="text" inputmode="decimal" data-op="${o.k}" data-of="saat" value="${esc(v.saat || "")}" placeholder="Örn. 2,5"></label></div>`;
   };
@@ -611,11 +611,12 @@ $("#balans").addEventListener("click", (e) => {
   E.balans = E.balans === b.dataset.bal ? "" : b.dataset.bal; save(); renderBalans();
 });
 
-// Tadilat işlemlerinin kısa özeti: "Kaynak (ER316L) 2 saat · Torna 3 saat"
+// Tadilat işlemlerinin kısa özeti: "Kaynak 80 gr 1020.0.90301006998 (0,6 mm · AISI 316) 3 saat · Torna 2 saat"
 function opsText(r) {
   const ops = r.ops || {};
   return OPS.filter(o => ops[o.k] && ops[o.k].on).map(o => {
-    const v = ops[o.k]; const tel = o.k === "kaynak" && v.tel && v.tel !== "__diger" ? ` (${v.tel})` : "";
+    const v = ops[o.k]; const t = o.k === "kaynak" ? telBul(v.tel) : null;
+    const tel = t ? ` ${v.gram ? v.gram + " gr " : ""}${t.kod} (${t.ad})` : "";
     return `${o.kisa}${tel}${v.saat ? ` ${v.saat} saat` : ""}`;
   }).join(" · ");
 }
@@ -674,8 +675,8 @@ document.addEventListener("input", (e) => {
   else if (el.dataset.op) {
     const r = fd.repairs[+el.closest(".rline").dataset.ri]; r.ops ||= {};
     const o = r.ops[el.dataset.op] ||= { on: true };
-    if (el.dataset.of === "tel") { o.tel = el.value; save(); rerenderFinding(fd.id); }      // "Diğer" seçilirse yazı alanı açılsın
-    else if (el.dataset.of === "telx") { o.tel = el.value.trim() || "__diger"; save(); }
+    if (el.dataset.of === "tel") { o.tel = el.value; save(); }
+    else if (el.dataset.of === "gram") { o.gram = el.value; save(); }
     else if (el.dataset.of === "saat") { o.saat = el.value; save(); }
   }
 });
@@ -898,7 +899,8 @@ function validate() {
     if (fd.repair && !fd.repairs.some(r => (r.desc || "").trim() || r.code)) p.push("tadilat yazılmadı");
     if (fd.repair) for (const r of fd.repairs) for (const o of OPS) {
       const v = (r.ops || {})[o.k]; if (!v || !v.on) continue;
-      if (o.k === "kaynak" && (!v.tel || v.tel === "__diger")) p.push("kaynak teli seçilmedi");
+      if (o.k === "kaynak" && !telBul(v.tel)) p.push("kaynak teli seçilmedi");
+      if (o.k === "kaynak" && !(num(v.gram) > 0)) p.push("kaynak teli gramı girilmedi");
       if (!(num(v.saat) > 0)) p.push(`${o.ad.toLocaleLowerCase("tr")} süresi girilmedi`);
     }
     if (p.length) { errs.push(`Tespit ${i + 1}: ${p.join(", ")}`); $(`.finding[data-fid="${fd.id}"]`)?.classList.add("err"); }
@@ -929,6 +931,9 @@ function buildReport() {
   if (bal) for (const s of bal.satirlar) repairs.push({ desc: s, adet: "1" });
   // İşlem bazında toplam saat
   const totals = OPS.map(o => ({ o, saat: repairs.reduce((t, r) => t + ((r.ops || {})[o.k] && r.ops[o.k].on ? num(r.ops[o.k].saat) : 0), 0) })).filter(x => x.saat > 0);
+  // Kaynak teli: kod bazında toplam gram
+  const telTop = new Map();
+  for (const r of repairs) { const v = (r.ops || {}).kaynak; if (v && v.on && telBul(v.tel)) telTop.set(v.tel, (telTop.get(v.tel) || 0) + num(v.gram)); }
   const where = (x) => x.pos ? ` <span style="color:#777">(${esc(x.grp)} · Pos ${esc(x.pos)})</span>` : "";
 
   // Her tespit bölünmez bir blok; 4'ten fazla görsel varsa devam bloklarına bölünür.
@@ -988,7 +993,8 @@ function buildReport() {
       <thead>${cap("REVISION SPARE PARTS / TADİLAT PARÇALARI", 4)}<tr><th style="width:6%">NO</th><th style="width:24%">LABOR CODE / İŞÇİLİK KODU</th><th>EXPLANATION / AÇIKLAMA</th><th style="width:11%">PIECE / ADET</th></tr></thead>
       <tbody>${repairs.length ? repairs.map((r, i) => `<tr><td style="text-align:center">${i + 1}</td><td>${esc(opsText(r))}</td><td>${esc(r.desc || r.ad)}${r.code ? `<br><span style="color:#555"><span class="mono">${esc(r.kod)}</span> ${esc(r.ad)}</span>${where(r)}` : ""}</td><td style="text-align:center">${esc(r.adet)}</td></tr>`).join("")
         : `<tr><td colspan="4" style="text-align:center;color:#777">Tadilat yok</td></tr>`}
-        ${totals.length ? `<tr><td colspan="4" style="background:#f4f5f7"><b>Toplam süre:</b> ${totals.map(t => `${t.o.ad} ${fmtNum(t.saat)} saat`).join(" · ")}</td></tr>` : ""}</tbody>
+        ${totals.length ? `<tr><td colspan="4" style="background:#f4f5f7"><b>Toplam süre:</b> ${totals.map(t => `${t.o.ad} ${fmtNum(t.saat)} saat`).join(" · ")}</td></tr>` : ""}
+        ${telTop.size ? `<tr><td colspan="4" style="background:#f4f5f7"><b>Kaynak teli:</b> ${[...telTop].map(([kod, g]) => `<span class="mono">${kod}</span> (${esc(telBul(kod).ad)}) ${fmtNum(g)} gr`).join(" · ")}</td></tr>` : ""}</tbody>
     </table>
 
     <div class="keep">
