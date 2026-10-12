@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Centriplus Ekspertiz</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Sevk Kontrol">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+  :root {
+    --bg:#f2f3f5; --card:#ffffff; --text:#2b2f36; --muted:#6b7280; --line:#dfe2e7;
+    --accent:#e8612c; --accent-soft:rgba(232,97,44,.10);
+    --ok:#15803d; --ok-soft:rgba(21,128,61,.12);
+    --bad:#c62828; --bad-soft:rgba(198,40,40,.12);
+    --warn:#b45309; --warn-soft:rgba(180,83,9,.12);
+    --blue:#1d4ed8; --blue-soft:rgba(29,78,216,.10);
+    --input:#f7f8fa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#121418; --card:#1c1f25; --text:#eceef2; --muted:#9aa1ad; --line:#2f343d; --input:#16191e; --blue:#7aa2ff; --blue-soft:rgba(122,162,255,.12); }
+  }
+  :root[data-theme="dark"] { --bg:#121418; --card:#1c1f25; --text:#eceef2; --muted:#9aa1ad; --line:#2f343d; --input:#16191e; --blue:#7aa2ff; --blue-soft:rgba(122,162,255,.12); }
+
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; font-size:15px; }
+  button, input, textarea, select { font:inherit; }
+  [hidden] { display:none !important; }
+
+  .top { position:sticky; top:0; z-index:20; background:#fff; border-bottom:3px solid var(--accent);
+         padding:calc(env(safe-area-inset-top) + 10px) 16px 10px; display:flex; align-items:center; gap:12px; }
+  .top a.back { color:#2b2f36; text-decoration:none; font-size:24px; line-height:1; padding:0 4px 0 0; }
+  .top img { height:30px; width:auto; }
+  .top .t { margin-left:auto; text-align:right; line-height:1.2; }
+  .top .t b { display:block; font-size:14px; color:#2b2f36; }
+  .top .t span { font-size:12px; color:#6b7280; }
+
+  main { max-width:760px; margin:0 auto; padding:16px 16px calc(96px + env(safe-area-inset-bottom)); }
+
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px; }
+  .card h2 { font-size:13px; letter-spacing:.06em; text-transform:uppercase; margin:0 0 12px; color:var(--accent); display:flex; align-items:center; gap:8px; }
+  .card h2 .step { display:inline-grid; place-items:center; width:22px; height:22px; border-radius:50%; background:var(--accent); color:#fff; font-size:12px; letter-spacing:0; }
+  .card h2 .right { margin-left:auto; color:var(--muted); text-transform:none; letter-spacing:0; font-weight:600; }
+  .demo { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--blue); background:var(--blue-soft); border-radius:999px; padding:2px 8px; }
+
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width:560px) { .grid { grid-template-columns:1fr; } }
+  label.f { display:flex; flex-direction:column; gap:5px; font-size:12px; font-weight:600; color:var(--muted); }
+  input[type=text], input[type=date], textarea, select {
+    color:var(--text); background:var(--input); border:1px solid var(--line); border-radius:10px; padding:11px 12px; width:100%; font-size:16px;
+  }
+  input[readonly] { opacity:.75; }
+  input:focus, textarea:focus, select:focus { outline:2px solid var(--accent); outline-offset:-1px; }
+  textarea { min-height:70px; resize:vertical; }
+  .hint { font-size:12px; color:var(--muted); margin-top:8px; }
+
+  /* ---------- tespitler ---------- */
+  .finding { border:1.5px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; background:var(--card); }
+  .finding.err { border-color:var(--bad); }
+  .fhead { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .fhead b { font-size:15px; }
+  .fhead .no { width:26px; height:26px; border-radius:8px; background:var(--accent); color:#fff; display:grid; place-items:center; font-size:13px; font-weight:700; }
+  .icon-btn { margin-left:auto; width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--muted); display:grid; place-items:center; cursor:pointer; }
+  .icon-btn svg { width:18px; height:18px; }
+  .need { font-size:12px; font-weight:600; color:var(--bad); margin:6px 0 0; }
+  .need.ok { color:var(--ok); }
+  .addrow { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+  .addphoto { display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:12px; border:1.5px dashed var(--accent); color:var(--accent); font-weight:700; cursor:pointer; }
+  .addphoto svg { width:20px; height:20px; }
+  .photos-full .addphoto { opacity:.4; pointer-events:none; }
+  .thumbs { display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:6px; margin:8px 0; }
+  .thumbs:empty { display:none; }
+  .thumb { position:relative; aspect-ratio:1; border-radius:9px; overflow:hidden; border:1px solid var(--line); }
+  .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .thumb button { position:absolute; top:4px; right:4px; width:26px; height:26px; border-radius:50%; border:none; background:rgba(0,0,0,.6); color:#fff; font-size:15px; line-height:1; cursor:pointer; }
+
+  .toggles { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .tog { display:inline-flex; align-items:center; gap:6px; padding:9px 14px; border-radius:999px; border:1.5px solid var(--line); background:transparent; color:var(--text); font-weight:600; font-size:14px; cursor:pointer; }
+  .tog::before { content:""; width:16px; height:16px; border-radius:4px; border:1.5px solid var(--muted); }
+  .tog[aria-pressed="true"] { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+  .tog[aria-pressed="true"]::before { background:var(--accent); border-color:var(--accent); box-shadow:inset 0 0 0 3px var(--card); }
+
+  .panel { margin-top:10px; border-radius:12px; background:var(--input); border:1px solid var(--line); padding:12px; }
+  .panel h3 { margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .search { position:relative; }
+  .search input { padding-left:38px; }
+  .search svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); width:18px; height:18px; color:var(--muted); }
+  .results { margin-top:6px; display:flex; flex-direction:column; gap:6px; }
+  .results:empty { display:none; }
+  .res { text-align:left; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--card); color:var(--text); cursor:pointer; display:grid; grid-template-columns:1fr auto; gap:2px 10px; }
+  .res .c { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; font-weight:700; }
+  .res .n { font-size:13px; }
+  .res .g { font-size:11.5px; color:var(--muted); grid-column:1 / -1; }
+  .res .cp { grid-row:1 / span 2; grid-column:2; align-self:center; text-align:right; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; color:var(--ok); font-weight:700; }
+  .res .cp small { display:block; font-family:system-ui,sans-serif; font-weight:600; font-size:10.5px; color:var(--muted); }
+  .res.var { border-style:dashed; }
+  .res.out { border-color:var(--warn); }
+  .rmsg { font-size:12.5px; color:var(--muted); padding:4px 2px; }
+
+  .plist { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  .plist:empty { display:none; }
+  .pline { display:grid; grid-template-columns:1fr 74px 34px; gap:8px; align-items:center; padding:10px; border-radius:10px; background:var(--card); border:1px solid var(--line); }
+  .pline .cp { font-family:ui-monospace,Menlo,Consolas,monospace; font-weight:700; font-size:13.5px; color:var(--ok); }
+  .pline .meta { font-size:12px; color:var(--muted); margin-top:2px; }
+  .pline input { padding:9px 8px; text-align:center; }
+  .tag { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.05em; border-radius:999px; padding:1px 7px; margin-left:6px; vertical-align:1px; }
+  .tag.erp { background:var(--ok-soft); color:var(--ok); }
+  .tag.kural { background:var(--blue-soft); color:var(--blue); }
+  .tag.dis { background:var(--warn-soft); color:var(--warn); }
+
+  .addfind { width:100%; padding:14px; border-radius:14px; border:1.5px dashed var(--accent); background:var(--accent-soft); color:var(--accent); font-weight:700; font-size:15px; cursor:pointer; }
+  .kit { display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border:1px solid var(--line); border-radius:10px; }
+  .kit input { width:20px; height:20px; accent-color:var(--accent); margin-top:2px; }
+  .kit .cp { font-family:ui-monospace,Menlo,Consolas,monospace; font-weight:700; font-size:13px; color:var(--ok); }
+
+  .bar { position:fixed; left:0; right:0; bottom:0; z-index:20; background:var(--card); border-top:1px solid var(--line);
+         padding:10px 16px calc(10px + env(safe-area-inset-bottom)); display:flex; gap:10px; justify-content:center; }
+  .bar > * { max-width:380px; }
+  .btn { flex:1; border:none; border-radius:12px; padding:14px 16px; font-weight:700; font-size:15px; cursor:pointer; background:var(--accent); color:#fff; }
+  .btn.sec { background:transparent; color:var(--text); border:1.5px solid var(--line); flex:0 1 auto; }
+  .delbtn { width:100%; padding:13px; border-radius:12px; border:1.5px solid var(--bad); background:transparent; color:var(--bad); font-weight:700; cursor:pointer; }
+  .toast { position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#2b2f36; color:#fff; padding:9px 14px; border-radius:10px; font-size:13px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:30; white-space:nowrap; }
+  .toast.show { opacity:1; }
+
+  /* ================= RAPOR (A4) ================= */
+  .paper { background:#fff; color:#1f2328; width:760px; margin:0 auto; padding:22px; border-radius:6px; box-shadow:0 2px 14px rgba(0,0,0,.12); font-size:11px; }
+  .r-top { display:flex; justify-content:space-between; align-items:flex-end; padding-bottom:8px; border-bottom:3px solid #e8612c; }
+  .r-top .doc { font-size:9.5px; color:#555; line-height:1.5; }
+  .r-top img { height:34px; }
+  .r-title { margin:12px 0 0; padding:6px; text-align:center; font-weight:700; letter-spacing:.08em; background:#2b2f36; color:#fff; font-size:11.5px; }
+  .r-tbl { width:100%; border-collapse:collapse; }
+  .r-tbl th, .r-tbl td { border:1px solid #c9ccd1; padding:5px 8px; text-align:left; vertical-align:top; }
+  .r-tbl th { background:#f4f5f7; font-weight:600; }
+  .r-tbl thead th { background:#f4f5f7; text-align:center; font-size:10px; letter-spacing:.04em; }
+  .r-info th { width:32%; }
+  .r-sec { margin-top:16px; padding:5px; text-align:center; font-weight:700; font-size:10.5px; letter-spacing:.08em; border:1px solid #c9ccd1; background:#f4f5f7; }
+  .r-find { display:grid; grid-template-columns:1.15fr 1fr; border:1px solid #c9ccd1; border-top:none; break-inside:avoid; page-break-inside:avoid; }
+  .r-find:first-of-type { border-top:1px solid #c9ccd1; }
+  .r-find .ph { padding:6px; display:grid; gap:6px; grid-template-columns:1fr 1fr; border-right:1px solid #c9ccd1; }
+  .r-find .ph.one { grid-template-columns:1fr; }
+  .r-find .ph img { width:100%; height:180px; object-fit:contain; background:#f4f5f7; display:block; }
+  .r-find .ph.one img { height:260px; }
+  .r-find .tx { padding:10px 12px; display:flex; flex-direction:column; justify-content:center; gap:8px; }
+  .r-find .tx .hd { font-weight:700; color:#e8612c; font-size:10px; letter-spacing:.06em; }
+  .r-find .tx .act { font-size:10px; border-top:1px dashed #c9ccd1; padding-top:6px; }
+  .r-find .tx .act b { color:#555; }
+  .mono { font-family:ui-monospace,Menlo,Consolas,monospace; }
+  .r-break { break-before:page; page-break-before:always; }
+  .r-expl { border:1px solid #c9ccd1; border-top:none; padding:10px; min-height:60px; }
+  .r-foot { margin-top:16px; padding-top:6px; border-top:1px solid #c9ccd1; display:flex; justify-content:space-between; gap:10px; font-size:9px; color:#777; }
+
+  @media print {
+    body { background:#fff; }
+    .top, #editView, .bar, .toast, .noprint { display:none !important; }
+    #reportView { display:block !important; }
+    main { padding:0; max-width:none; }
+    .paper { box-shadow:none; border-radius:0; padding:0; width:auto; zoom:1 !important; }
+    .r-break { margin-top:0; }
+    @page { size:A4; margin:11mm; }
+    .r-tbl tr { break-inside:avoid; page-break-inside:avoid; }
+    * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+<script src="katalog-ucd345.js"></script>
+</head>
+<body>
+
+<header class="top">
+  <a href="index.html" class="back" aria-label="Ana sayfa">‹</a>
+  <img src="logo.png" alt="Centriplus">
+  <div class="t"><b>Ekspertiz</b><span id="topSub">Tespit raporu</span></div>
+</header>
+
+<main>
+
+<!-- ================= DÜZENLEME ================= -->
+<div id="editView">
+
+  <section class="card">
+    <h2><span class="step">1</span>Servis Bilgileri <span class="right"><span class="demo">DEMO</span></span></h2>
+    <div class="grid">
+      <label class="f">Düzenleyen<input type="text" data-f="duzenleyen"></label>
+      <label class="f">Tarih<input type="date" data-f="tarih"></label>
+      <label class="f">Konu<input type="text" data-f="konu"></label>
+      <label class="f">Müşteri<input type="text" data-f="musteri" autocapitalize="characters"></label>
+      <label class="f">Makine / Model
+        <select data-f="model" id="model" disabled></select>
+      </label>
+      <label class="f">Seri Numarası<input type="text" data-f="seri"></label>
+      <label class="f">Servis Numarası<input type="text" data-f="servis" inputmode="numeric"></label>
+    </div>
+    <div class="hint">Müşteri adı girildiğinde makinesi ve seri numarası otomatik gelir. Demo: makine listesi ve kitler ERP'den geliyormuş gibi örnek verilerle çalışır (şimdilik sadece GEA UCD 345).</div>
+  </section>
+
+  <section class="card" style="background:transparent;border:none;padding:0">
+    <h2 style="padding:0 2px"><span class="step">2</span>Tespitler <span class="right" id="photoCount"></span></h2>
+    <div id="findings"></div>
+    <button type="button" class="addfind" id="addFinding">+ Tespit Ekle</button>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">3</span>ERP Kitleri</h2>
+    <div id="kits"></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">4</span>Açıklamalar</h2>
+    <label class="f">Genel açıklama (isteğe bağlı)<textarea data-f="aciklama"></textarea></label>
+  </section>
+
+  <button type="button" class="delbtn" id="delBtn">Bu Ekspertizi Sil</button>
+
+  <div class="bar">
+    <a class="btn sec" href="index.html" style="text-decoration:none;display:grid;place-items:center">Ana Sayfa</a>
+    <button type="button" class="btn" id="previewBtn">Raporu Oluştur</button>
+  </div>
+</div>
+
+<!-- ================= RAPOR ================= -->
+<div id="reportView" hidden>
+  <div class="paper" id="paper"></div>
+  <div class="bar noprint">
+    <button type="button" class="btn sec" id="backBtn">← Düzenle</button>
+    <button type="button" class="btn" id="printBtn">PDF Kaydet / Paylaş</button>
+  </div>
+</div>
+
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const K = window.KATALOG;
+const MAX_PHOTOS = 30;
+const SKEY = "centriplus-ekspertiz:v1";
+const DOC = { no: "SS-FR-01", rev: "01/29.09.2020" };
+
+/* ---------- yardımcılar ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const nl2br = (s) => esc(s).replace(/\n/g, "<br>");
+const today = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const trDate = (iso) => iso ? iso.split("-").reverse().join(".") : "";
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+let toastT;
+const toast = (t) => { const el = $("#toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), 2200); };
+
+const ICON_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+const ICON_GAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>';
+const ICON_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>';
+const ICON_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
+
+/* ==================================================================
+   KATALOG & CENTRIPLUS KODU
+================================================================== */
+const PARTS = K.parcalar.trim().split("\n").map(line => {
+  const [code, ad, w] = line.split("|");
+  const yer = w.split(";").map(x => { const [g, q] = x.split(":"); return { g, q }; });
+  return { code, ad, yer, digits: code.replace(/\D/g, ""), birim: /m$/.test(yer[0].q) ? "Mt" : "AD." };
+});
+// Katalogda olmayan ama ERP'de kayıtlı parçalar da aranabilsin
+for (const [code, e] of Object.entries(K.erp)) {
+  if (!PARTS.some(p => p.code === code))
+    PARTS.push({ code, ad: e.ad || "", yer: [{ g: "ERP", q: "" }], digits: code.replace(/\D/g, ""), birim: "AD.", erpOnly: true });
+}
+
+// Centriplus kodu: önce ERP eşleşmesi, yoksa kural
+//   1122.2 = talaşlı imalat parçaları (GEA çizim parçaları, 840x-…)
+//   1120.0 = direkt ürünler (rulman, conta, cıvata vb.)
+function cpFor(code) {
+  const e = K.erp[code];
+  if (e) return { kod: e.kod, src: "erp" };
+  const d = code.replace(/\D/g, "");
+  return { kod: (/^840\d/.test(d) ? "1122.2." : "1120.0.") + d, src: "kural" };
+}
+const SRC_TAG = { erp: '<span class="tag erp">ERP</span>', kural: '<span class="tag kural">KURAL</span>', dis: '<span class="tag dis">KATALOG DIŞI</span>' };
+const yerText = (p) => p.yer.map(y => K.gruplar[y.g] + (y.q ? ` (${y.q})` : "")).join(" · ");
+const fmtCode = (d) => d.length === 11 ? `${d.slice(0, 4)}-${d.slice(4, 8)}-${d.slice(8)}` : d;
+
+function searchParts(q) {
+  q = q.trim();
+  if (q.length < 2) return { list: [], variants: [], outside: null };
+  const dg = q.replace(/\D/g, "");
+  const isCode = dg.length >= 3 && dg.length >= q.replace(/[\s\-.]/g, "").length - 1;
+  let list;
+  if (isCode) {
+    list = PARTS.filter(p => p.digits.includes(dg))
+      .sort((a, b) => (b.digits === dg) - (a.digits === dg) || (b.digits.startsWith(dg)) - (a.digits.startsWith(dg)) || a.code.localeCompare(b.code));
+  } else {
+    const t = q.toLocaleUpperCase("en");
+    list = PARTS.filter(p => p.ad.includes(t) || yerText(p).toLocaleUpperCase("tr").includes(q.toLocaleUpperCase("tr")));
+  }
+  let variants = [], outside = null;
+  if (isCode && dg.length === 11 && !list.some(p => p.digits === dg)) {
+    variants = PARTS.filter(p => p.digits.slice(0, 8) === dg.slice(0, 8));
+    outside = fmtCode(dg);
+  }
+  return { list: list.slice(0, 8), variants, outside };
+}
+
+/* ==================================================================
+   DURUM
+================================================================== */
+function blank() {
+  return { f: { tarih: today(), musteri: "", model: "" }, findings: [newFinding()], kits: {} };
+}
+function newFinding() { return { id: uid(), desc: "", change: false, repair: false, parts: [], repairDesc: "", repairQty: "" }; }
+
+let E;
+try { E = JSON.parse(localStorage.getItem(SKEY) || "null"); } catch (e) { E = null; }
+if (!E || !E.findings) E = blank();
+
+let saveT;
+function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(SKEY, JSON.stringify(E)); } catch (e) {} }, 250); }
+const F = (id) => E.findings.find(x => x.id === id);
+
+/* ---------- fotoğraf deposu ---------- */
+const DB = (() => {
+  let dbp;
+  const open = () => dbp ||= new Promise((res, rej) => {
+    const r = indexedDB.open("centriplus-ekspertiz", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("photos", { keyPath: "id" });
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+  const tx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => {
+    const t = db.transaction("photos", mode); const req = fn(t.objectStore("photos"));
+    t.oncomplete = () => res(req && req.result); t.onerror = () => rej(t.error);
+  }); };
+  return { all: () => tx("readonly", s => s.getAll()), put: (p) => tx("readwrite", s => s.put(p)), del: (id) => tx("readwrite", s => s.delete(id)), clear: () => tx("readwrite", s => s.clear()) };
+})();
+let photos = [];
+
+function compress(file, max = 1400, q = 0.8) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file); const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg", q));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("okunamadı")); };
+    img.src = url;
+  });
+}
+
+/* ==================================================================
+   ARAYÜZ
+================================================================== */
+function renderHeader() {
+  $$("[data-f]").forEach(el => { if (el.id !== "model") el.value = E.f[el.dataset.f] ?? ""; });
+  renderModel();
+}
+
+// Müşteri adı girilince ERP'deki makinesi ve seri numarası otomatik gelir (demo: tek makine)
+function pickMachine(m) {
+  E.f.model = m ? m.model : "";
+  E.f.seri = m ? m.seri : "";
+  $('[data-f="seri"]').value = E.f.seri;
+}
+function syncModel() {
+  const has = !!(E.f.musteri || "").trim();
+  if (has && !E.f.model) pickMachine(K.makineler[0]);
+  if (!has && E.f.model) pickMachine(null);
+  save(); renderModel(); renderKits();
+}
+function renderModel() {
+  const sel = $("#model");
+  sel.innerHTML = E.f.model || (E.f.musteri || "").trim()
+    ? K.makineler.map(m => `<option value="${esc(m.model)}" ${m.model === E.f.model ? "selected" : ""}>${esc(m.model)} · ${esc(m.seri)}</option>`).join("")
+    : `<option value="">Müşteri adı girilince gelir</option>`;
+  sel.disabled = !(E.f.musteri || "").trim();
+}
+
+function findingHTML(fd, i) {
+  const ph = photos.filter(p => p.finding === fd.id);
+  return `
+  <div class="finding" data-fid="${fd.id}">
+    <div class="fhead"><span class="no">${i + 1}</span><b>Tespit ${i + 1}</b>
+      <button type="button" class="icon-btn" data-act="delFinding" aria-label="Tespiti sil">${ICON_DEL}</button></div>
+
+    <div class="addrow">
+      <label class="addphoto">${ICON_CAM} Kamera<input type="file" accept="image/*" capture="environment" hidden data-photo></label>
+      <label class="addphoto">${ICON_GAL} Galeri<input type="file" accept="image/*" multiple hidden data-photo></label>
+    </div>
+    <div class="thumbs">${ph.map(p => `<div class="thumb"><img src="${p.src}" alt=""><button type="button" data-rm="${p.id}" aria-label="Kaldır">×</button></div>`).join("")}</div>
+    <div class="need ${ph.length ? "ok" : ""}">${ph.length ? `✓ ${ph.length} görsel` : "En az 1 görsel zorunlu"}</div>
+
+    <label class="f" style="margin-top:10px">Tespit açıklaması<textarea data-k="desc">${esc(fd.desc)}</textarea></label>
+
+    <div class="toggles">
+      <button type="button" class="tog" data-act="change" aria-pressed="${fd.change}">Parça Değişimi</button>
+      <button type="button" class="tog" data-act="repair" aria-pressed="${fd.repair}">Tadilat</button>
+    </div>
+
+    <div class="panel" ${fd.change ? "" : "hidden"}>
+      <h3>Değişecek parçalar</h3>
+      <div class="search">${ICON_SEARCH}<input type="text" data-search placeholder="Üretici kodu veya parça adı" autocomplete="off" autocapitalize="characters"></div>
+      <div class="results"></div>
+      <div class="plist">${fd.parts.map((p, j) => partLineHTML(p, j)).join("")}</div>
+    </div>
+
+    <div class="panel" ${fd.repair ? "" : "hidden"}>
+      <h3>Tadilat</h3>
+      <div class="grid" style="grid-template-columns:1fr 90px">
+        <label class="f">Yapılacak tadilat<input type="text" data-k="repairDesc" value="${esc(fd.repairDesc)}"></label>
+        <label class="f">Adet<input type="text" data-k="repairQty" inputmode="decimal" value="${esc(fd.repairQty)}"></label>
+      </div>
+    </div>
+  </div>`;
+}
+
+function partLineHTML(p, j) {
+  return `<div class="pline" data-pi="${j}">
+    <div><div class="cp">${esc(p.kod)}${SRC_TAG[p.src]}</div>
+      <div class="meta"><span class="mono">${esc(p.code)}</span> · ${esc(p.ad || "—")}</div></div>
+    <input type="text" data-pq inputmode="decimal" value="${esc(p.adet)}" aria-label="Adet">
+    <button type="button" class="icon-btn" data-act="rmPart" aria-label="Parçayı kaldır" style="margin:0">${ICON_DEL}</button>
+  </div>`;
+}
+
+function renderFindings() {
+  $("#findings").innerHTML = E.findings.map(findingHTML).join("");
+  updatePhotoState();
+}
+function rerenderFinding(id) {
+  const el = $(`.finding[data-fid="${id}"]`); if (!el) return;
+  const i = E.findings.findIndex(x => x.id === id);
+  el.outerHTML = findingHTML(E.findings[i], i);
+  updatePhotoState();
+}
+function updatePhotoState() {
+  const full = photos.length >= MAX_PHOTOS;
+  document.body.classList.toggle("photos-full", full);
+  $$("input[data-photo]").forEach(i => i.disabled = full);
+  $("#photoCount").textContent = `${photos.length} / ${MAX_PHOTOS} görsel`;
+}
+
+function renderKits() {
+  const list = E.f.model ? K.kitler : [];
+  if (!E.f.model) { $("#kits").innerHTML = `<div class="hint" style="margin:0">Müşteri adı girildiğinde ERP'de bu müşteriye tanımlı hazır kitler burada listelenir.</div>`; return; }
+  if (!list.length) { $("#kits").innerHTML = `<div class="hint" style="margin:0">Bu müşteri için tanımlı kit yok.</div>`; return; }
+  $("#kits").innerHTML = list.map(k => `
+    <label class="kit"><input type="checkbox" data-kit="${esc(k.kod)}" ${E.kits[k.kod] ? "checked" : ""}>
+      <div><div class="cp">${esc(k.kod)}<span class="tag erp">ERP</span></div><div style="font-size:13.5px;margin-top:2px">${esc(k.ad)} · ${k.adet} ${esc(k.birim)}</div></div>
+    </label>`).join("") + `<div class="hint">İşaretlenen kitler rapordaki yedek parça listesinin başına eklenir.</div>`;
+}
+
+function renderAll() { renderHeader(); renderFindings(); renderKits(); }
+
+/* ---------- arama sonuçları ---------- */
+function renderResults(fdEl, q) {
+  const box = $(".results", fdEl);
+  if (!E.f.model) { box.innerHTML = `<div class="rmsg">Önce müşteri adını gir; makine seçilince parça kataloğu açılır.</div>`; return; }
+  const { list, variants, outside } = searchParts(q);
+  const row = (p, cls = "") => {
+    const cp = cpFor(p.code);
+    return `<button type="button" class="res ${cls}" data-add="${p.code}">
+      <span class="c">${esc(p.code)}</span><span class="cp">${esc(cp.kod)}<small>${cp.src === "erp" ? "ERP kodu" : "kural ile"}</small></span>
+      <span class="n">${esc(p.ad || "—")}</span><span class="g">${esc(yerText(p))}</span></button>`;
+  };
+  let html = list.map(p => row(p)).join("");
+  if (outside) {
+    if (variants.length) html += `<div class="rmsg">Bu kod katalogda yok. Aynı parçanın katalogdaki varyantları:</div>` + variants.map(p => row(p, "var")).join("");
+    const cp = cpFor(outside);
+    html += `<button type="button" class="res out" data-out="${outside}"><span class="c">${outside}</span><span class="cp">${cp.kod}<small>katalog dışı</small></span><span class="n">Katalog dışı parça olarak ekle</span></button>`;
+  } else if (!list.length && q.trim().length >= 2) {
+    html = `<div class="rmsg">Eşleşen parça yok. Kodun tamamını (11 hane) yazarsan katalog dışı olarak ekleyebilirsin.</div>`;
+  }
+  box.innerHTML = html;
+}
+
+function addPart(fid, code, outside) {
+  const fd = F(fid);
+  const cp = cpFor(code);
+  const p = PARTS.find(x => x.code === code);
+  const exist = fd.parts.find(x => x.code === code);
+  if (exist) { toast("Bu parça zaten listede"); return; }
+  fd.parts.push({ code, kod: cp.kod, src: outside ? "dis" : cp.src, ad: (p && p.ad) || (K.erp[code] && K.erp[code].ad) || "", adet: "1", birim: p ? p.birim : "AD." });
+  save(); rerenderFinding(fid);
+  toast("Parça eklendi");
+}
+
+/* ==================================================================
+   OLAYLAR
+================================================================== */
+document.addEventListener("input", (e) => {
+  const el = e.target;
+  if (el.dataset.f !== undefined) { E.f[el.dataset.f] = el.value; save(); if (el.dataset.f === "musteri") syncModel();
+    else if (el.dataset.f === "model") { pickMachine(K.makineler.find(m => m.model === el.value)); save(); renderKits(); }
+    return; }
+  const fdEl = el.closest(".finding"); if (!fdEl) return;
+  const fd = F(fdEl.dataset.fid);
+  if (el.dataset.k) { fd[el.dataset.k] = el.value; save(); }
+  else if (el.dataset.search !== undefined) renderResults(fdEl, el.value);
+  else if (el.dataset.pq !== undefined) { fd.parts[+el.closest(".pline").dataset.pi].adet = el.value; save(); }
+});
+document.addEventListener("change", (e) => {
+  if (e.target.dataset.kit) { E.kits[e.target.dataset.kit] = e.target.checked; save(); }
+});
+
+$("#findings").addEventListener("click", async (e) => {
+  const fdEl = e.target.closest(".finding"); if (!fdEl) return;
+  const fid = fdEl.dataset.fid, fd = F(fid);
+  const act = e.target.closest("[data-act]")?.dataset.act;
+
+  if (act === "change" || act === "repair") { fd[act] = !fd[act]; save(); rerenderFinding(fid); return; }
+  if (act === "rmPart") { fd.parts.splice(+e.target.closest(".pline").dataset.pi, 1); save(); rerenderFinding(fid); return; }
+  if (act === "delFinding") {
+    if (!confirm(`Tespit ${E.findings.indexOf(fd) + 1} ve görselleri silinsin mi?`)) return;
+    for (const p of photos.filter(p => p.finding === fid)) await DB.del(p.id).catch(() => {});
+    photos = photos.filter(p => p.finding !== fid);
+    E.findings = E.findings.filter(x => x.id !== fid);
+    if (!E.findings.length) E.findings.push(newFinding());
+    save(); renderFindings(); return;
+  }
+  const add = e.target.closest("[data-add]"); if (add) { addPart(fid, add.dataset.add, false); return; }
+  const out = e.target.closest("[data-out]"); if (out) { addPart(fid, out.dataset.out, true); return; }
+  const rm = e.target.closest("[data-rm]");
+  if (rm) {
+    if (!confirm("Görsel kaldırılsın mı?")) return;
+    photos = photos.filter(p => p.id !== rm.dataset.rm); await DB.del(rm.dataset.rm).catch(() => {});
+    rerenderFinding(fid);
+  }
+});
+
+document.addEventListener("change", async (e) => {
+  const inp = e.target; if (inp.dataset.photo === undefined) return;
+  const fid = inp.closest(".finding").dataset.fid;
+  let files = [...inp.files]; inp.value = ""; if (!files.length) return;
+  const room = MAX_PHOTOS - photos.length;
+  if (room <= 0) { toast(`En fazla ${MAX_PHOTOS} görsel eklenebilir`); return; }
+  const skipped = Math.max(0, files.length - room); files = files.slice(0, room);
+  toast("Görseller işleniyor…");
+  for (const f of files) {
+    try { const p = { id: uid(), finding: fid, src: await compress(f), ts: Date.now() }; photos.push(p); await DB.put(p).catch(() => {}); } catch (err) {}
+  }
+  rerenderFinding(fid);
+  if (skipped) alert(`Sınır ${MAX_PHOTOS} olduğu için ${skipped} görsel eklenmedi.`);
+});
+
+$("#addFinding").addEventListener("click", () => {
+  E.findings.push(newFinding()); save(); renderFindings();
+  $(".finding:last-of-type").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+$("#delBtn").addEventListener("click", async () => {
+  if (!confirm("Ekspertiz, tüm tespitler ve görsellerle birlikte silinsin mi?\nBu işlem geri alınamaz.")) return;
+  clearTimeout(saveT); try { localStorage.removeItem(SKEY); } catch (e) {}
+  photos = []; await DB.clear().catch(() => {});
+  E = blank(); renderAll(); window.scrollTo(0, 0); toast("Ekspertiz silindi");
+});
+
+/* ==================================================================
+   RAPOR
+================================================================== */
+function validate() {
+  const errs = [];
+  if (!E.f.model) errs.push("Müşteri adı girilmedi (makine seçilemedi)");
+  $$(".finding").forEach(el => el.classList.remove("err"));
+  E.findings.forEach((fd, i) => {
+    const p = [];
+    if (!photos.some(x => x.finding === fd.id)) p.push("görsel yok");
+    if (!fd.desc.trim()) p.push("açıklama yok");
+    if (fd.change && !fd.parts.length) p.push("değişecek parça seçilmedi");
+    if (fd.repair && !fd.repairDesc.trim()) p.push("tadilat yazılmadı");
+    if (p.length) { errs.push(`Tespit ${i + 1}: ${p.join(", ")}`); $(`.finding[data-fid="${fd.id}"]`)?.classList.add("err"); }
+  });
+  return errs;
+}
+
+const num = (s) => parseFloat(String(s).replace(",", ".")) || 0;
+const fmtNum = (n) => String(Math.round(n * 100) / 100).replace(".", ",");
+
+function fileName() {
+  const f = E.f;
+  return [f.musteri, f.model ? K.kisa : "", f.seri, f.servis ? `(${f.servis})` : "", "TESPİT RAPORU"].filter(Boolean).join(" ").replace(/[\\/:*?"<>|]/g, "-");
+}
+
+function buildReport() {
+  const f = E.f;
+  // Yedek parçalar: önce seçili kitler, sonra tespitlerdeki parçalar (aynı kod birleştirilir)
+  const spare = [];
+  for (const k of (f.model ? K.kitler : [])) if (E.kits[k.kod]) spare.push({ kod: k.kod, code: "", ad: k.ad, adet: k.adet, birim: k.birim });
+  for (const fd of E.findings) if (fd.change) for (const p of fd.parts) {
+    const ex = spare.find(s => s.kod === p.kod);
+    if (ex) ex.adet = num(ex.adet) + num(p.adet); else spare.push({ ...p, adet: num(p.adet) });
+  }
+  const repairs = E.findings.filter(fd => fd.repair && fd.repairDesc.trim());
+
+  const finds = E.findings.map((fd, i) => {
+    const ph = photos.filter(p => p.finding === fd.id);
+    const acts = [];
+    if (fd.change && fd.parts.length) acts.push(`<div class="act"><b>Değişim:</b> ${fd.parts.map(p => `<span class="mono">${esc(p.kod)}</span> ${esc(p.ad)} × ${esc(p.adet)}`).join("; ")}</div>`);
+    if (fd.repair && fd.repairDesc) acts.push(`<div class="act"><b>Tadilat:</b> ${esc(fd.repairDesc)}${fd.repairQty ? " × " + esc(fd.repairQty) : ""}</div>`);
+    return `<div class="r-find">
+      <div class="ph ${ph.length === 1 ? "one" : ""}">${ph.map(p => `<img src="${p.src}" alt="">`).join("")}</div>
+      <div class="tx"><div class="hd">TESPİT ${i + 1}</div><div>${nl2br(fd.desc)}</div>${acts.join("")}</div>
+    </div>`;
+  }).join("");
+
+  $("#paper").innerHTML = `
+    <div class="r-top">
+      <div class="doc">Document number : ${DOC.no}<br>Revision no/date: ${DOC.rev}</div>
+      <img src="logo.png" alt="Centriplus">
+    </div>
+    <div class="r-title">SERVICE FORM / SERVİS FORMU</div>
+    <table class="r-tbl r-info">
+      <tr><th>Düzenleyen / Prepared by</th><td>${esc(f.duzenleyen)}</td></tr>
+      <tr><th>Tarih / Date</th><td>${trDate(f.tarih)}</td></tr>
+      <tr><th>Konu / Subject</th><td>${esc(f.konu)}</td></tr>
+      <tr><th>Müşteri / Customer</th><td>${esc(f.musteri)}</td></tr>
+      <tr><th>Model / Type</th><td>${esc(f.model)}</td></tr>
+      <tr><th>Seri Numarası / Serial No.</th><td>${esc(f.seri)}</td></tr>
+      <tr><th>Servis Numarası</th><td>${esc(f.servis)}</td></tr>
+    </table>
+
+    <div class="r-sec">WORKS AND PICTURES / YAPILAN ÇALIŞMALAR VE GÖRSELLER</div>
+    ${finds}
+
+    <div class="r-break"></div>
+    <div class="r-sec" style="margin-top:0">CONCLUSION / SONUÇ</div>
+
+    <div class="r-sec" style="margin-top:10px">SPARE PARTS / YEDEK PARÇALAR</div>
+    <table class="r-tbl">
+      <thead><tr><th style="width:6%">NO</th><th style="width:24%">MATERIAL CODE / MALZEME KODU</th><th style="width:17%">ÜRETİCİ KODU</th><th>EXPLANATION / AÇIKLAMA</th><th style="width:11%">PIECE / ADET</th></tr></thead>
+      <tbody>${spare.length ? spare.map((s, i) => `<tr><td style="text-align:center">${i + 1}</td><td class="mono">${esc(s.kod)}</td><td class="mono">${esc(s.code)}</td><td>${esc(s.ad)}</td><td style="text-align:center">${fmtNum(num(s.adet))} ${esc(s.birim)}</td></tr>`).join("")
+        : `<tr><td colspan="5" style="text-align:center;color:#777">Yedek parça yok</td></tr>`}</tbody>
+    </table>
+
+    <div class="r-sec" style="margin-top:12px">REVISION SPARE PARTS / TADİLAT PARÇALARI</div>
+    <table class="r-tbl">
+      <thead><tr><th style="width:6%">NO</th><th style="width:24%">LABOR CODE / İŞÇİLİK KODU</th><th>EXPLANATION / AÇIKLAMA</th><th style="width:11%">PIECE / ADET</th></tr></thead>
+      <tbody>${repairs.length ? repairs.map((fd, i) => `<tr><td style="text-align:center">${i + 1}</td><td></td><td>${esc(fd.repairDesc)}</td><td style="text-align:center">${esc(fd.repairQty)}</td></tr>`).join("")
+        : `<tr><td colspan="4" style="text-align:center;color:#777">Tadilat yok</td></tr>`}</tbody>
+    </table>
+
+    <div class="r-sec" style="margin-top:12px">EXPLANATIONS / AÇIKLAMALAR</div>
+    <div class="r-expl">${nl2br(f.aciklama)}</div>
+
+    <div class="r-foot"><span>Centriplus · ${DOC.no}</span><span>${esc(fileName())}</span></div>`;
+}
+
+function fitPaper() { $("#paper").style.zoom = Math.min(1, (document.documentElement.clientWidth - 24) / 760); }
+window.addEventListener("resize", () => { if (!$("#reportView").hidden) fitPaper(); });
+
+$("#previewBtn").addEventListener("click", () => {
+  const errs = validate();
+  if (errs.length) {
+    alert("Rapor oluşturulamadı:\n\n" + errs.join("\n"));
+    $(".finding.err")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  buildReport();
+  $("#editView").hidden = true; $("#reportView").hidden = false;
+  $("#topSub").textContent = "Rapor önizleme";
+  window.scrollTo(0, 0); fitPaper();
+});
+$("#backBtn").addEventListener("click", () => {
+  $("#reportView").hidden = true; $("#editView").hidden = false; $("#topSub").textContent = "Tespit raporu"; window.scrollTo(0, 0);
+});
+$("#printBtn").addEventListener("click", () => {
+  const old = document.title; document.title = fileName() || old;
+  const restore = () => { document.title = old; window.removeEventListener("afterprint", restore); };
+  window.addEventListener("afterprint", restore);
+  window.print();
+});
+
+/* ---------- başlat ---------- */
+DB.all().catch(() => []).then(list => { photos = (list || []).sort((a, b) => a.ts - b.ts); renderAll(); });
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
