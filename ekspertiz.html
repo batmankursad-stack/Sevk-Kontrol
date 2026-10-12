@@ -135,7 +135,8 @@
   .rline input { padding:9px 8px; }
   .rline input[data-rq], .rline.labor input[data-of="saat"] { text-align:center; }
   .rline.labor { border-style:dashed; border-color:var(--accent); }
-  .rline .ops { grid-column:1 / -1; }
+  .rline .ops, .rline .note { grid-column:1 / -1; }
+  .rline .note { padding:8px 10px; font-size:14px; }
   .opchips { display:flex; flex-wrap:wrap; gap:6px; }
   .tog.sm { padding:7px 11px; font-size:13px; }
   .tog.sm::before { width:14px; height:14px; }
@@ -221,6 +222,8 @@
   .r-find .tx .act b { color:#555; }
   .fblock + .fblock { margin-top:-1px; }   /* komşu tespitlerin çizgileri üst üste binsin */
   .mono { font-family:ui-monospace,Menlo,Consolas,monospace; }
+  .paper .olcu { font-size:8.5px; color:#555; margin-top:2px; }
+  .paper span.olcu { margin:0; }
   .r-break { break-before:page; page-break-before:always; }
   .r-expl { border:1px solid #c9ccd1; border-top:none; padding:10px; min-height:60px; }
   .r-foot { margin-top:16px; padding-top:6px; border-top:1px solid #c9ccd1; display:flex; justify-content:space-between; gap:10px; font-size:9px; color:#777; }
@@ -545,7 +548,7 @@ function partLineHTML(p, j) {
       <div class="meta"><span class="mono">${esc(p.code)}</span> · ${esc(p.ad || "—")}${posTag(p)}</div></div>
     <input type="text" data-pq inputmode="decimal" value="${esc(p.adet)}" aria-label="Adet">
     <button type="button" class="icon-btn" data-act="rmPart" aria-label="Parçayı kaldır" style="margin:0">${ICON_DEL}</button>
-    <input type="text" class="note" data-pn value="${esc(p.not || "")}" placeholder="Açıklama (isteğe bağlı)">
+    <input type="text" class="note" data-pn value="${esc(p.not || "")}" placeholder="Ölçü (örn. Ø85,02 mm)">
   </div>`;
 }
 
@@ -583,6 +586,7 @@ function repairLineHTML(r, j) {
     <input type="text" data-rd value="${esc(r.desc)}" placeholder="Yapılacak tadilat">
     <input type="text" data-rq inputmode="decimal" value="${esc(r.adet)}" placeholder="Adet" aria-label="Adet">
     <button type="button" class="icon-btn" data-act="rmRepair" aria-label="Satırı kaldır" style="margin:0">${ICON_DEL}</button>
+    ${r.code ? `<input type="text" class="note" data-ro value="${esc(r.olcu || "")}" placeholder="Ölçü (örn. 4 mm aşınma)">` : ""}
     <div class="ops">
       <div class="opchips">${OPS.map(o => `<button type="button" class="tog sm" data-act="op" data-k="${o.k}" aria-pressed="${!!(ops[o.k] && ops[o.k].on)}">${o.k === "kaynak" ? "Kaynak var mı?" : o.ad}</button>`).join("")}</div>
       ${OPS.map(opPanel).join("")}
@@ -686,6 +690,7 @@ document.addEventListener("input", (e) => {
   else if (el.dataset.search !== undefined) renderResults(fdEl, el.value);
   else if (el.dataset.pq !== undefined) { fd.parts[+el.closest(".pline").dataset.pi].adet = el.value; save(); }
   else if (el.dataset.pn !== undefined) { fd.parts[+el.closest(".pline").dataset.pi].not = el.value; save(); }
+  else if (el.dataset.ro !== undefined) { fd.repairs[+el.closest(".rline").dataset.ri].olcu = el.value; save(); }
   else if (el.dataset.rd !== undefined) { fd.repairs[+el.closest(".rline").dataset.ri].desc = el.value; save(); }
   else if (el.dataset.rq !== undefined) { fd.repairs[+el.closest(".rline").dataset.ri].adet = el.value; save(); }
   else if (el.dataset.op) {
@@ -857,7 +862,7 @@ function openSheet(pos) {
     </div>
     <div class="grid" style="grid-template-columns:90px 1fr">
       <label class="f">Adet<input type="text" id="shQty" inputmode="decimal" value="1"></label>
-      <label class="f">Açıklama<input type="text" id="shNote" placeholder="Örn. yatak yüzeyinde aşınma"></label>
+      <label class="f">Ölçü<input type="text" id="shNote" placeholder="Örn. Ø85,02 mm"></label>
     </div>
     <div class="acts"><button type="button" class="btn sec" id="shCancel">Vazgeç</button><button type="button" class="btn" id="shAdd">Ekle</button></div>`;
   sh.dataset.pos = pos;
@@ -879,7 +884,7 @@ function addFromSheet() {
     else fd.parts.push({ ...base, adet, birim: /m$/.test(it.qty) ? "Mt" : "AD.", not: note });
     fd.change = true;
   }
-  if (doRepair) { fd.repairs.push({ ...base, desc: note || it.en, adet }); fd.repair = true; }
+  if (doRepair) { fd.repairs.push({ ...base, desc: it.en, olcu: note, adet }); fd.repair = true; }
   save(); closeSheet(); showGroupKeepScroll();
   toast(`Pos ${pos} eklendi`);
 }
@@ -967,10 +972,10 @@ function buildReport() {
     const ph = photos.filter(p => p.finding === fd.id);
     const acts = [];
     if (fd.change && fd.parts.length) acts.push(`<div class="act"><b>Değişim:</b> ${fd.parts.map(p =>
-      `<span class="mono">${esc(p.kod)}</span> ${esc(p.ad)}${p.pos ? ` (Pos ${esc(p.pos)})` : ""} × ${esc(p.adet)}${p.not ? ` — ${esc(p.not)}` : ""}`).join("; ")}</div>`);
+      `<span class="mono">${esc(p.kod)}</span> ${esc(p.ad)}${p.pos ? ` (Pos ${esc(p.pos)})` : ""} × ${esc(p.adet)}${p.not ? ` <span class="olcu">${esc(p.not)}</span>` : ""}`).join("; ")}</div>`);
     const rs = fd.repair ? fd.repairs.filter(r => (r.desc || "").trim() || r.code) : [];
     if (rs.length) acts.push(`<div class="act"><b>Tadilat:</b> ${rs.map(r =>
-      `${esc(r.desc || r.ad)}${r.code ? ` (${esc(r.ad)}${r.pos ? `, Pos ${esc(r.pos)}` : ""})` : ""}${r.adet ? " × " + esc(r.adet) : ""}${opsText(r) ? ` <i>[${esc(opsText(r))}]</i>` : ""}`).join("; ")}</div>`);
+      `${esc(r.desc || r.ad)}${r.code ? ` (${[r.desc === r.ad ? "" : esc(r.ad), r.pos ? `Pos ${esc(r.pos)}` : ""].filter(Boolean).join(", ")})` : ""}${r.adet ? " × " + esc(r.adet) : ""}${r.olcu ? ` <span class="olcu">${esc(r.olcu)}</span>` : ""}${opsText(r) ? ` <i>[${esc(opsText(r))}]</i>` : ""}`).join("; ")}</div>`);
     for (let c = 0; c < Math.max(1, ph.length); c += 4) {
       const chunk = ph.slice(c, c + 4);
       const text = c === 0
@@ -1008,14 +1013,14 @@ function buildReport() {
     <div class="r-sec" style="margin-top:0">CONCLUSION / SONUÇ</div>
 
     <table class="r-tbl" style="margin-top:10px">
-      <thead>${cap("SPARE PARTS / YEDEK PARÇALAR", 5)}<tr><th style="width:6%">NO</th><th style="width:24%">MATERIAL CODE / MALZEME KODU</th><th style="width:17%">ÜRETİCİ KODU</th><th>EXPLANATION / AÇIKLAMA</th><th style="width:11%">PIECE / ADET</th></tr></thead>
-      <tbody>${spare.length ? spare.map((s, i) => `<tr><td style="text-align:center">${i + 1}</td><td class="mono">${esc(s.kod)}</td><td class="mono">${esc(s.code)}</td><td>${esc(s.ad)}${where(s)}${s.notlar && s.notlar.length ? `<br><span style="color:#555">${esc(s.notlar.join("; "))}</span>` : ""}</td><td style="text-align:center">${fmtNum(num(s.adet))} ${esc(s.birim)}</td></tr>`).join("")
-        : `<tr><td colspan="5" style="text-align:center;color:#777">Yedek parça yok</td></tr>`}</tbody>
+      <thead>${cap("SPARE PARTS / YEDEK PARÇALAR", 4)}<tr><th style="width:6%">NO</th><th style="width:26%">MATERIAL CODE / MALZEME KODU</th><th>EXPLANATION / AÇIKLAMA</th><th style="width:11%">PIECE / ADET</th></tr></thead>
+      <tbody>${spare.length ? spare.map((s, i) => `<tr><td style="text-align:center">${i + 1}</td><td class="mono">${esc(s.kod)}</td><td>${esc(s.ad)}${where(s)}${s.notlar && s.notlar.length ? `<div class="olcu">${esc(s.notlar.join("; "))}</div>` : ""}</td><td style="text-align:center">${fmtNum(num(s.adet))} ${esc(s.birim)}</td></tr>`).join("")
+        : `<tr><td colspan="4" style="text-align:center;color:#777">Yedek parça yok</td></tr>`}</tbody>
     </table>
 
     <table class="r-tbl" style="margin-top:12px">
       <thead>${cap("REVISION SPARE PARTS / TADİLAT PARÇALARI", 4)}<tr><th style="width:6%">NO</th><th style="width:24%">LABOR CODE / İŞÇİLİK KODU</th><th>EXPLANATION / AÇIKLAMA</th><th style="width:11%">PIECE / ADET</th></tr></thead>
-      <tbody>${repairs.length ? repairs.map((r, i) => `<tr><td style="text-align:center">${i + 1}</td><td>${esc(opsText(r))}</td><td>${esc(r.desc || r.ad)}${r.code ? `<br><span style="color:#555"><span class="mono">${esc(r.kod)}</span> ${esc(r.ad)}</span>${where(r)}` : ""}</td><td style="text-align:center">${esc(r.adet)}</td></tr>`).join("")
+      <tbody>${repairs.length ? repairs.map((r, i) => `<tr><td style="text-align:center">${i + 1}</td><td>${esc(opsText(r))}</td><td>${esc(r.desc || r.ad)}${r.code ? `<br><span style="color:#555"><span class="mono">${esc(r.kod)}</span> ${r.desc === r.ad ? "" : esc(r.ad)}</span>${where(r)}` : ""}${r.olcu ? `<div class="olcu">${esc(r.olcu)}</div>` : ""}</td><td style="text-align:center">${esc(r.adet)}</td></tr>`).join("")
         : `<tr><td colspan="4" style="text-align:center;color:#777">Tadilat yok</td></tr>`}
         ${totals.length ? `<tr><td colspan="4" style="background:#f4f5f7"><b>Toplam süre:</b> ${totals.map(t => `${t.o.ad} ${fmtNum(t.saat)} saat`).join(" · ")}</td></tr>` : ""}
         ${telTop.size ? `<tr><td colspan="4" style="background:#f4f5f7"><b>Kaynak teli:</b> ${[...telTop].map(([kod, g]) => `<span class="mono">${kod}</span> (${esc(telBul(kod).ad)}) ${fmtNum(g)} gr`).join(" · ")}</td></tr>` : ""}</tbody>
