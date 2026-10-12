@@ -134,6 +134,17 @@
   .rline .head .cp { font-family:ui-monospace,Menlo,Consolas,monospace; font-weight:700; color:var(--ok); }
   .rline input { padding:9px 8px; }
   .rline input[data-rq] { text-align:center; }
+  .rline .ops { grid-column:1 / -1; }
+  .opchips { display:flex; flex-wrap:wrap; gap:6px; }
+  .tog.sm { padding:7px 11px; font-size:13px; }
+  .tog.sm::before { width:14px; height:14px; }
+  .opbox { margin-top:8px; padding:10px; border-radius:10px; border:1px dashed var(--accent); display:grid; gap:8px; }
+  .opbox b { font-size:12.5px; color:var(--accent); text-transform:uppercase; letter-spacing:.05em; }
+  .opbox input, .opbox select { padding:9px 10px; }
+  .balans { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  @media (max-width:560px) { .balans { grid-template-columns:1fr; } }
+  .balans button { padding:13px 10px; border-radius:12px; border:1.5px solid var(--line); background:var(--input); color:var(--text); font-weight:700; cursor:pointer; }
+  .balans button[aria-pressed="true"] { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
   .pickbtn { width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:12px; border:1.5px solid var(--accent); background:var(--accent); color:#fff; font-weight:700; cursor:pointer; margin-bottom:10px; }
   .pickbtn svg { width:20px; height:20px; }
   .linkbtn { background:none; border:none; color:var(--accent); font-weight:700; padding:8px 2px; cursor:pointer; }
@@ -263,12 +274,18 @@
   </section>
 
   <section class="card">
-    <h2><span class="step">3</span>ERP Kitleri</h2>
+    <h2><span class="step">3</span>Balans</h2>
+    <div class="balans" id="balans"></div>
+    <div class="hint">İsteğe bağlı. Seçim raporda tadilat satırı olarak yer alır; tekrar dokununca kalkar.</div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">4</span>ERP Kitleri</h2>
     <div id="kits"></div>
   </section>
 
   <section class="card">
-    <h2><span class="step">4</span>Açıklamalar</h2>
+    <h2><span class="step">5</span>Açıklamalar</h2>
     <label class="f">Genel açıklama (isteğe bağlı)<textarea data-f="aciklama"></textarea></label>
   </section>
 
@@ -311,6 +328,27 @@
 
 <script>
 const K = window.KATALOG;
+
+/* Tadilat işlemleri — her tadilat satırında isteğe bağlı açılır */
+const KAYNAK_TELLERI = [
+  "SG2 / ER70S-6 (karbon çelik)",
+  "ER308L (paslanmaz)",
+  "ER309L (paslanmaz–karbon birleştirme)",
+  "ER316L (paslanmaz)",
+  "ER2209 (dubleks)",
+  "Sert dolgu teli (tungsten karbür)"
+];
+const OPS = [
+  { k: "kaynak",  ad: "Kaynak",          kisa: "Kaynak" },
+  { k: "argon",   ad: "Argon kaynağı",   kisa: "Argon" },
+  { k: "torna",   ad: "Torna",           kisa: "Torna" },
+  { k: "iscilik", ad: "Sadece işçilik",  kisa: "İşçilik" }
+];
+const BALANS = [
+  { k: "tambur",  ad: "Tambur balans",           satirlar: ["Tambur balans"] },
+  { k: "helezon", ad: "Helezon balans",          satirlar: ["Helezon balans"] },
+  { k: "ikisi",   ad: "Tambur + Helezon balans", satirlar: ["Tambur balans", "Helezon balans"] }
+];
 const MAX_PHOTOS = 30;
 const SKEY = "centriplus-ekspertiz:v1";
 const DOC = { no: "SS-FR-01", rev: "01/29.09.2020" };
@@ -384,7 +422,7 @@ function searchParts(q) {
    DURUM
 ================================================================== */
 function blank() {
-  return { f: { tarih: today(), musteri: "", model: "" }, findings: [newFinding()], kits: {} };
+  return { f: { tarih: today(), musteri: "", model: "" }, findings: [newFinding()], kits: {}, balans: "" };
 }
 // parts:   değişecek parçalar  {code, kod, src, ad, adet, birim, not, grp, pos}
 // repairs: tadilat satırları   {desc, adet, code?, kod?, src?, ad?, grp?, pos?}
@@ -512,10 +550,29 @@ function partLineHTML(p, j) {
 function repairLineHTML(r, j) {
   const head = r.code
     ? `<div class="head"><span class="cp">${esc(r.kod)}</span> · <span class="mono">${esc(r.code)}</span> · ${esc(r.ad)}${posTag(r)}</div>` : "";
+  const ops = r.ops || {};
+  const opPanel = (o) => {
+    const v = ops[o.k] || {};
+    if (!v.on) return "";
+    const tel = o.k === "kaynak" ? `
+      <label class="f">Kaynak teli
+        <select data-op="${o.k}" data-of="tel">
+          <option value="">Seçiniz</option>
+          ${KAYNAK_TELLERI.map(t => `<option ${v.tel === t ? "selected" : ""}>${esc(t)}</option>`).join("")}
+          <option value="__diger" ${v.tel && !KAYNAK_TELLERI.includes(v.tel) ? "selected" : ""}>Diğer (yaz)</option>
+        </select></label>
+      ${v.tel && !KAYNAK_TELLERI.includes(v.tel) ? `<label class="f">Tel tipi<input type="text" data-op="${o.k}" data-of="telx" value="${esc(v.tel === "__diger" ? "" : v.tel)}" placeholder="Tel tipini yaz"></label>` : ""}` : "";
+    return `<div class="opbox"><b>${o.ad}</b>${tel}
+      <label class="f">Süre (saat)<input type="text" inputmode="decimal" data-op="${o.k}" data-of="saat" value="${esc(v.saat || "")}" placeholder="Örn. 2,5"></label></div>`;
+  };
   return `<div class="rline" data-ri="${j}">${head}
     <input type="text" data-rd value="${esc(r.desc)}" placeholder="Yapılacak tadilat">
     <input type="text" data-rq inputmode="decimal" value="${esc(r.adet)}" placeholder="Adet" aria-label="Adet">
     <button type="button" class="icon-btn" data-act="rmRepair" aria-label="Satırı kaldır" style="margin:0">${ICON_DEL}</button>
+    <div class="ops">
+      <div class="opchips">${OPS.map(o => `<button type="button" class="tog sm" data-act="op" data-k="${o.k}" aria-pressed="${!!(ops[o.k] && ops[o.k].on)}">${o.k === "kaynak" ? "Kaynak var mı?" : o.ad}</button>`).join("")}</div>
+      ${OPS.map(opPanel).join("")}
+    </div>
   </div>`;
 }
 
@@ -546,7 +603,24 @@ function renderKits() {
     </label>`).join("") + `<div class="hint">İşaretlenen kitler rapordaki yedek parça listesinin başına eklenir.</div>`;
 }
 
-function renderAll() { renderHeader(); renderFindings(); renderKits(); }
+function renderBalans() {
+  $("#balans").innerHTML = BALANS.map(b => `<button type="button" data-bal="${b.k}" aria-pressed="${E.balans === b.k}">${b.ad}</button>`).join("");
+}
+$("#balans").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-bal]"); if (!b) return;
+  E.balans = E.balans === b.dataset.bal ? "" : b.dataset.bal; save(); renderBalans();
+});
+
+// Tadilat işlemlerinin kısa özeti: "Kaynak (ER316L) 2 saat · Torna 3 saat"
+function opsText(r) {
+  const ops = r.ops || {};
+  return OPS.filter(o => ops[o.k] && ops[o.k].on).map(o => {
+    const v = ops[o.k]; const tel = o.k === "kaynak" && v.tel && v.tel !== "__diger" ? ` (${v.tel})` : "";
+    return `${o.kisa}${tel}${v.saat ? ` ${v.saat} saat` : ""}`;
+  }).join(" · ");
+}
+
+function renderAll() { renderHeader(); renderFindings(); renderBalans(); renderKits(); }
 
 /* ---------- arama sonuçları ---------- */
 function renderResults(fdEl, q) {
@@ -597,6 +671,13 @@ document.addEventListener("input", (e) => {
   else if (el.dataset.pn !== undefined) { fd.parts[+el.closest(".pline").dataset.pi].not = el.value; save(); }
   else if (el.dataset.rd !== undefined) { fd.repairs[+el.closest(".rline").dataset.ri].desc = el.value; save(); }
   else if (el.dataset.rq !== undefined) { fd.repairs[+el.closest(".rline").dataset.ri].adet = el.value; save(); }
+  else if (el.dataset.op) {
+    const r = fd.repairs[+el.closest(".rline").dataset.ri]; r.ops ||= {};
+    const o = r.ops[el.dataset.op] ||= { on: true };
+    if (el.dataset.of === "tel") { o.tel = el.value; save(); rerenderFinding(fd.id); }      // "Diğer" seçilirse yazı alanı açılsın
+    else if (el.dataset.of === "telx") { o.tel = el.value.trim() || "__diger"; save(); }
+    else if (el.dataset.of === "saat") { o.saat = el.value; save(); }
+  }
 });
 document.addEventListener("change", (e) => {
   if (e.target.dataset.kit) { E.kits[e.target.dataset.kit] = e.target.checked; save(); }
@@ -609,6 +690,12 @@ $("#findings").addEventListener("click", async (e) => {
 
   if (act === "change" || act === "repair") { fd[act] = !fd[act]; save(); rerenderFinding(fid); return; }
   if (act === "rmPart") { fd.parts.splice(+e.target.closest(".pline").dataset.pi, 1); save(); rerenderFinding(fid); return; }
+  if (act === "op") {
+    const r = fd.repairs[+e.target.closest(".rline").dataset.ri]; r.ops ||= {};
+    const k = e.target.closest("[data-k]").dataset.k;
+    r.ops[k] = { ...(r.ops[k] || {}), on: !(r.ops[k] && r.ops[k].on) };
+    save(); rerenderFinding(fid); return;
+  }
   if (act === "rmRepair") { fd.repairs.splice(+e.target.closest(".rline").dataset.ri, 1); save(); rerenderFinding(fid); return; }
   if (act === "addRepair") { fd.repairs.push({ desc: "", adet: "1" }); save(); rerenderFinding(fid); $(`.finding[data-fid="${fid}"] .rline:last-child [data-rd]`)?.focus(); return; }
   if (act === "pick") { if (!E.f.model) { alert("Önce müşteri adını gir; makine seçilince çizimler açılır."); return; } openPicker(fid); return; }
@@ -809,6 +896,11 @@ function validate() {
     if (!fd.desc.trim()) p.push("açıklama yok");
     if (fd.change && !fd.parts.length) p.push("değişecek parça seçilmedi");
     if (fd.repair && !fd.repairs.some(r => (r.desc || "").trim() || r.code)) p.push("tadilat yazılmadı");
+    if (fd.repair) for (const r of fd.repairs) for (const o of OPS) {
+      const v = (r.ops || {})[o.k]; if (!v || !v.on) continue;
+      if (o.k === "kaynak" && (!v.tel || v.tel === "__diger")) p.push("kaynak teli seçilmedi");
+      if (!(num(v.saat) > 0)) p.push(`${o.ad.toLocaleLowerCase("tr")} süresi girilmedi`);
+    }
     if (p.length) { errs.push(`Tespit ${i + 1}: ${p.join(", ")}`); $(`.finding[data-fid="${fd.id}"]`)?.classList.add("err"); }
   });
   return errs;
@@ -833,6 +925,10 @@ function buildReport() {
     else spare.push({ ...p, adet: num(p.adet), notlar: p.not ? [p.not] : [] });
   }
   const repairs = E.findings.flatMap(fd => fd.repair ? fd.repairs.filter(r => (r.desc || "").trim() || r.code) : []);
+  const bal = BALANS.find(b => b.k === E.balans);
+  if (bal) for (const s of bal.satirlar) repairs.push({ desc: s, adet: "1" });
+  // İşlem bazında toplam saat
+  const totals = OPS.map(o => ({ o, saat: repairs.reduce((t, r) => t + ((r.ops || {})[o.k] && r.ops[o.k].on ? num(r.ops[o.k].saat) : 0), 0) })).filter(x => x.saat > 0);
   const where = (x) => x.pos ? ` <span style="color:#777">(${esc(x.grp)} · Pos ${esc(x.pos)})</span>` : "";
 
   // Her tespit bölünmez bir blok; 4'ten fazla görsel varsa devam bloklarına bölünür.
@@ -845,7 +941,7 @@ function buildReport() {
       `<span class="mono">${esc(p.kod)}</span> ${esc(p.ad)}${p.pos ? ` (Pos ${esc(p.pos)})` : ""} × ${esc(p.adet)}${p.not ? ` — ${esc(p.not)}` : ""}`).join("; ")}</div>`);
     const rs = fd.repair ? fd.repairs.filter(r => (r.desc || "").trim() || r.code) : [];
     if (rs.length) acts.push(`<div class="act"><b>Tadilat:</b> ${rs.map(r =>
-      `${esc(r.desc || r.ad)}${r.code ? ` (${esc(r.ad)}${r.pos ? `, Pos ${esc(r.pos)}` : ""})` : ""}${r.adet ? " × " + esc(r.adet) : ""}`).join("; ")}</div>`);
+      `${esc(r.desc || r.ad)}${r.code ? ` (${esc(r.ad)}${r.pos ? `, Pos ${esc(r.pos)}` : ""})` : ""}${r.adet ? " × " + esc(r.adet) : ""}${opsText(r) ? ` <i>[${esc(opsText(r))}]</i>` : ""}`).join("; ")}</div>`);
     for (let c = 0; c < Math.max(1, ph.length); c += 4) {
       const chunk = ph.slice(c, c + 4);
       const text = c === 0
@@ -890,8 +986,9 @@ function buildReport() {
 
     <table class="r-tbl" style="margin-top:12px">
       <thead>${cap("REVISION SPARE PARTS / TADİLAT PARÇALARI", 4)}<tr><th style="width:6%">NO</th><th style="width:24%">LABOR CODE / İŞÇİLİK KODU</th><th>EXPLANATION / AÇIKLAMA</th><th style="width:11%">PIECE / ADET</th></tr></thead>
-      <tbody>${repairs.length ? repairs.map((r, i) => `<tr><td style="text-align:center">${i + 1}</td><td></td><td>${esc(r.desc || r.ad)}${r.code ? `<br><span style="color:#555"><span class="mono">${esc(r.kod)}</span> ${esc(r.ad)}</span>${where(r)}` : ""}</td><td style="text-align:center">${esc(r.adet)}</td></tr>`).join("")
-        : `<tr><td colspan="4" style="text-align:center;color:#777">Tadilat yok</td></tr>`}</tbody>
+      <tbody>${repairs.length ? repairs.map((r, i) => `<tr><td style="text-align:center">${i + 1}</td><td>${esc(opsText(r))}</td><td>${esc(r.desc || r.ad)}${r.code ? `<br><span style="color:#555"><span class="mono">${esc(r.kod)}</span> ${esc(r.ad)}</span>${where(r)}` : ""}</td><td style="text-align:center">${esc(r.adet)}</td></tr>`).join("")
+        : `<tr><td colspan="4" style="text-align:center;color:#777">Tadilat yok</td></tr>`}
+        ${totals.length ? `<tr><td colspan="4" style="background:#f4f5f7"><b>Toplam süre:</b> ${totals.map(t => `${t.o.ad} ${fmtNum(t.saat)} saat`).join(" · ")}</td></tr>` : ""}</tbody>
     </table>
 
     <div class="keep">
