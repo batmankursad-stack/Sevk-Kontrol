@@ -133,7 +133,8 @@
   .rline .head { grid-column:1 / -1; font-size:12.5px; color:var(--muted); }
   .rline .head .cp { font-family:ui-monospace,Menlo,Consolas,monospace; font-weight:700; color:var(--ok); }
   .rline input { padding:9px 8px; }
-  .rline input[data-rq] { text-align:center; }
+  .rline input[data-rq], .rline.labor input[data-of="saat"] { text-align:center; }
+  .rline.labor { border-style:dashed; border-color:var(--accent); }
   .rline .ops { grid-column:1 / -1; }
   .opchips { display:flex; flex-wrap:wrap; gap:6px; }
   .tog.sm { padding:7px 11px; font-size:13px; }
@@ -531,7 +532,7 @@ function findingHTML(fd, i) {
       <h3>Tadilat</h3>
       <button type="button" class="pickbtn" data-act="pick" data-mode="repair">${ICON_DRAW} Çizimden Seç</button>
       <div class="plist">${fd.repairs.map((r, j) => repairLineHTML(r, j)).join("")}</div>
-      <button type="button" class="linkbtn" data-act="addRepair">+ Parçasız tadilat satırı ekle</button>
+      <button type="button" class="linkbtn" data-act="addLabor">+ Sadece işçilik ekle</button>
     </div>
   </div>`;
 }
@@ -549,6 +550,16 @@ function partLineHTML(p, j) {
 }
 
 function repairLineHTML(r, j) {
+  // Sadece işçilik satırı: parça yok, açıklama + süre
+  if (r.labor) {
+    const v = (r.ops || {}).iscilik || {};
+    return `<div class="rline labor" data-ri="${j}">
+      <div class="head"><span class="pos" style="margin:0">SADECE İŞÇİLİK</span></div>
+      <input type="text" data-rd value="${esc(r.desc)}" placeholder="Yapılacak iş (örn. demontaj-montaj)">
+      <input type="text" inputmode="decimal" data-op="iscilik" data-of="saat" value="${esc(v.saat || "")}" placeholder="Saat" aria-label="Süre (saat)">
+      <button type="button" class="icon-btn" data-act="rmRepair" aria-label="Satırı kaldır" style="margin:0">${ICON_DEL}</button>
+    </div>`;
+  }
   const head = r.code
     ? `<div class="head"><span class="cp">${esc(r.kod)}</span> · <span class="mono">${esc(r.code)}</span> · ${esc(r.ad)}${posTag(r)}</div>` : "";
   const ops = r.ops || {};
@@ -698,7 +709,7 @@ $("#findings").addEventListener("click", async (e) => {
     save(); rerenderFinding(fid); return;
   }
   if (act === "rmRepair") { fd.repairs.splice(+e.target.closest(".rline").dataset.ri, 1); save(); rerenderFinding(fid); return; }
-  if (act === "addRepair") { fd.repairs.push({ desc: "", adet: "1" }); save(); rerenderFinding(fid); $(`.finding[data-fid="${fid}"] .rline:last-child [data-rd]`)?.focus(); return; }
+  if (act === "addLabor") { fd.repairs.push({ labor: true, desc: "", adet: "1", ops: { iscilik: { on: true, saat: "" } } }); save(); rerenderFinding(fid); $(`.finding[data-fid="${fid}"] .rline:last-child [data-rd]`)?.focus(); return; }
   if (act === "pick") { if (!E.f.model) { alert("Önce müşteri adını gir; makine seçilince çizimler açılır."); return; } openPicker(fid); return; }
   if (act === "delFinding") {
     if (!confirm(`Tespit ${E.findings.indexOf(fd) + 1} ve görselleri silinsin mi?`)) return;
@@ -897,6 +908,7 @@ function validate() {
     if (!fd.desc.trim()) p.push("açıklama yok");
     if (fd.change && !fd.parts.length) p.push("değişecek parça seçilmedi");
     if (fd.repair && !fd.repairs.some(r => (r.desc || "").trim() || r.code)) p.push("tadilat yazılmadı");
+    if (fd.repair && fd.repairs.some(r => r.labor && !(r.desc || "").trim())) p.push("işçilik açıklaması yazılmadı");
     if (fd.repair) for (const r of fd.repairs) for (const o of OPS) {
       const v = (r.ops || {})[o.k]; if (!v || !v.on) continue;
       if (o.k === "kaynak" && !telBul(v.tel)) p.push("kaynak teli seçilmedi");
