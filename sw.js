@@ -1,4 +1,4 @@
-const CACHE = "kontrol-raporu-v8";
+const CACHE = "kontrol-raporu-v9";
 const FILES = ["./", "./index.html", "./ekspertiz.html", "./katalog-ucd345.js", "./manifest.json", "./logo.png", "./dekanter.jpg", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {

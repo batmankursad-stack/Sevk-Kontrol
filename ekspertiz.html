@@ -137,16 +137,21 @@
   .r-tbl thead th { background:#f4f5f7; text-align:center; font-size:10px; letter-spacing:.04em; }
   .r-info th { width:32%; }
   .r-sec { margin-top:16px; padding:5px; text-align:center; font-weight:700; font-size:10.5px; letter-spacing:.08em; border:1px solid #c9ccd1; background:#f4f5f7; }
-  .r-find { display:grid; grid-template-columns:1.15fr 1fr; border:1px solid #c9ccd1; border-top:none; break-inside:avoid; page-break-inside:avoid; }
-  .r-find:first-of-type { border-top:1px solid #c9ccd1; }
-  .r-find .ph { padding:6px; display:grid; gap:6px; grid-template-columns:1fr 1fr; border-right:1px solid #c9ccd1; }
-  .r-find .ph.one { grid-template-columns:1fr; }
-  .r-find .ph img { width:100%; height:180px; object-fit:contain; background:#f4f5f7; display:block; }
-  .r-find .ph.one img { height:260px; }
-  .r-find .tx { padding:10px 12px; display:flex; flex-direction:column; justify-content:center; gap:8px; }
-  .r-find .tx .hd { font-weight:700; color:#e8612c; font-size:10px; letter-spacing:.06em; }
-  .r-find .tx .act { font-size:10px; border-top:1px dashed #c9ccd1; padding-top:6px; }
+  /* Sayfa bütünlüğü: her blok bölünmez, sığmazsa bir sonraki sayfaya geçer (iPhone/WebKit için inline-block). */
+  .keep { display:inline-block; width:100%; vertical-align:top; break-inside:avoid; page-break-inside:avoid; }
+  .r-tbl tr { break-inside:avoid; page-break-inside:avoid; }
+  .r-tbl thead tr.cap th { background:#f4f5f7; padding:5px; text-align:center; font-weight:700; font-size:10.5px; letter-spacing:.08em; }
+  .r-find { width:100%; border-collapse:collapse; table-layout:fixed; }
+  .r-find td { border:1px solid #c9ccd1; vertical-align:middle; }
+  .r-find td.ph { width:54%; padding:6px; font-size:0; }
+  .r-find .ph img { display:inline-block; width:calc(50% - 3px); height:180px; object-fit:contain; background:#f4f5f7; vertical-align:top; margin-bottom:6px; }
+  .r-find .ph img:nth-child(2n) { margin-left:6px; }
+  .r-find .ph.one img { width:100%; height:260px; margin:0; }
+  .r-find td.tx { padding:10px 12px; }
+  .r-find .tx .hd { font-weight:700; color:#e8612c; font-size:10px; letter-spacing:.06em; margin-bottom:6px; }
+  .r-find .tx .act { font-size:10px; border-top:1px dashed #c9ccd1; padding-top:6px; margin-top:8px; }
   .r-find .tx .act b { color:#555; }
+  .fblock + .fblock { margin-top:-1px; }   /* komşu tespitlerin çizgileri üst üste binsin */
   .mono { font-family:ui-monospace,Menlo,Consolas,monospace; }
   .r-break { break-before:page; page-break-before:always; }
   .r-expl { border:1px solid #c9ccd1; border-top:none; padding:10px; min-height:60px; }
@@ -160,7 +165,6 @@
     .paper { box-shadow:none; border-radius:0; padding:0; width:auto; zoom:1 !important; }
     .r-break { margin-top:0; }
     @page { size:A4; margin:11mm; }
-    .r-tbl tr { break-inside:avoid; page-break-inside:avoid; }
     * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   }
 </style>
@@ -590,16 +594,28 @@ function buildReport() {
   }
   const repairs = E.findings.filter(fd => fd.repair && fd.repairDesc.trim());
 
-  const finds = E.findings.map((fd, i) => {
+  // Her tespit bölünmez bir blok; 4'ten fazla görsel varsa devam bloklarına bölünür.
+  // İlk blok bölüm başlığını da taşır, böylece başlık sayfa sonunda tek kalmaz.
+  const blocks = [];
+  E.findings.forEach((fd, i) => {
     const ph = photos.filter(p => p.finding === fd.id);
     const acts = [];
     if (fd.change && fd.parts.length) acts.push(`<div class="act"><b>Değişim:</b> ${fd.parts.map(p => `<span class="mono">${esc(p.kod)}</span> ${esc(p.ad)} × ${esc(p.adet)}`).join("; ")}</div>`);
     if (fd.repair && fd.repairDesc) acts.push(`<div class="act"><b>Tadilat:</b> ${esc(fd.repairDesc)}${fd.repairQty ? " × " + esc(fd.repairQty) : ""}</div>`);
-    return `<div class="r-find">
-      <div class="ph ${ph.length === 1 ? "one" : ""}">${ph.map(p => `<img src="${p.src}" alt="">`).join("")}</div>
-      <div class="tx"><div class="hd">TESPİT ${i + 1}</div><div>${nl2br(fd.desc)}</div>${acts.join("")}</div>
-    </div>`;
-  }).join("");
+    for (let c = 0; c < Math.max(1, ph.length); c += 4) {
+      const chunk = ph.slice(c, c + 4);
+      const text = c === 0
+        ? `<div class="hd">TESPİT ${i + 1}</div><div>${nl2br(fd.desc)}</div>${acts.join("")}`
+        : `<div class="hd">TESPİT ${i + 1} (devam)</div>`;
+      blocks.push(`<div class="keep fblock">${blocks.length === 0 ? `<div class="r-sec">WORKS AND PICTURES / YAPILAN ÇALIŞMALAR VE GÖRSELLER</div>` : ""}
+        <table class="r-find"><tr>
+          <td class="ph ${chunk.length === 1 ? "one" : ""}">${chunk.map(p => `<img src="${p.src}" alt="">`).join("")}</td>
+          <td class="tx">${text}</td>
+        </tr></table></div>`);
+    }
+  });
+  const finds = blocks.join("");
+  const cap = (txt, cols) => `<tr class="cap"><th colspan="${cols}">${txt}</th></tr>`;
 
   $("#paper").innerHTML = `
     <div class="r-top">
@@ -607,7 +623,7 @@ function buildReport() {
       <img src="logo.png" alt="Centriplus">
     </div>
     <div class="r-title">SERVICE FORM / SERVİS FORMU</div>
-    <table class="r-tbl r-info">
+    <table class="r-tbl r-info keep" style="display:table">
       <tr><th>Düzenleyen / Prepared by</th><td>${esc(f.duzenleyen)}</td></tr>
       <tr><th>Tarih / Date</th><td>${trDate(f.tarih)}</td></tr>
       <tr><th>Konu / Subject</th><td>${esc(f.konu)}</td></tr>
@@ -617,28 +633,27 @@ function buildReport() {
       <tr><th>Servis Numarası</th><td>${esc(f.servis)}</td></tr>
     </table>
 
-    <div class="r-sec">WORKS AND PICTURES / YAPILAN ÇALIŞMALAR VE GÖRSELLER</div>
     ${finds}
 
     <div class="r-break"></div>
     <div class="r-sec" style="margin-top:0">CONCLUSION / SONUÇ</div>
 
-    <div class="r-sec" style="margin-top:10px">SPARE PARTS / YEDEK PARÇALAR</div>
-    <table class="r-tbl">
-      <thead><tr><th style="width:6%">NO</th><th style="width:24%">MATERIAL CODE / MALZEME KODU</th><th style="width:17%">ÜRETİCİ KODU</th><th>EXPLANATION / AÇIKLAMA</th><th style="width:11%">PIECE / ADET</th></tr></thead>
+    <table class="r-tbl" style="margin-top:10px">
+      <thead>${cap("SPARE PARTS / YEDEK PARÇALAR", 5)}<tr><th style="width:6%">NO</th><th style="width:24%">MATERIAL CODE / MALZEME KODU</th><th style="width:17%">ÜRETİCİ KODU</th><th>EXPLANATION / AÇIKLAMA</th><th style="width:11%">PIECE / ADET</th></tr></thead>
       <tbody>${spare.length ? spare.map((s, i) => `<tr><td style="text-align:center">${i + 1}</td><td class="mono">${esc(s.kod)}</td><td class="mono">${esc(s.code)}</td><td>${esc(s.ad)}</td><td style="text-align:center">${fmtNum(num(s.adet))} ${esc(s.birim)}</td></tr>`).join("")
         : `<tr><td colspan="5" style="text-align:center;color:#777">Yedek parça yok</td></tr>`}</tbody>
     </table>
 
-    <div class="r-sec" style="margin-top:12px">REVISION SPARE PARTS / TADİLAT PARÇALARI</div>
-    <table class="r-tbl">
-      <thead><tr><th style="width:6%">NO</th><th style="width:24%">LABOR CODE / İŞÇİLİK KODU</th><th>EXPLANATION / AÇIKLAMA</th><th style="width:11%">PIECE / ADET</th></tr></thead>
+    <table class="r-tbl" style="margin-top:12px">
+      <thead>${cap("REVISION SPARE PARTS / TADİLAT PARÇALARI", 4)}<tr><th style="width:6%">NO</th><th style="width:24%">LABOR CODE / İŞÇİLİK KODU</th><th>EXPLANATION / AÇIKLAMA</th><th style="width:11%">PIECE / ADET</th></tr></thead>
       <tbody>${repairs.length ? repairs.map((fd, i) => `<tr><td style="text-align:center">${i + 1}</td><td></td><td>${esc(fd.repairDesc)}</td><td style="text-align:center">${esc(fd.repairQty)}</td></tr>`).join("")
         : `<tr><td colspan="4" style="text-align:center;color:#777">Tadilat yok</td></tr>`}</tbody>
     </table>
 
-    <div class="r-sec" style="margin-top:12px">EXPLANATIONS / AÇIKLAMALAR</div>
-    <div class="r-expl">${nl2br(f.aciklama)}</div>
+    <div class="keep">
+      <div class="r-sec" style="margin-top:12px">EXPLANATIONS / AÇIKLAMALAR</div>
+      <div class="r-expl">${nl2br(f.aciklama)}</div>
+    </div>
 
     <div class="r-foot"><span>Centriplus · ${DOC.no}</span><span>${esc(fileName())}</span></div>`;
 }
